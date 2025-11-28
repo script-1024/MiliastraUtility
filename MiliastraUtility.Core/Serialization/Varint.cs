@@ -1,8 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using MiliastraUtility.Core.Serialization;
 
-namespace MiliastraUtility.Core.Types;
+namespace MiliastraUtility.Core.Serialization;
 
 [InlineArray(10)] // 将 64 位整数编码为 Varint 时最多需要 10 个字节
 internal struct VarintBuffer { private byte first; }
