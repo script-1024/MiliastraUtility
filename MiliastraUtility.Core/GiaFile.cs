@@ -47,20 +47,22 @@ public sealed class GiaFile : GiFile
                     if (tag.WireType != WireType.LENGTH) break;
                     var asset = Asset.FromBuffer(reader);
                     instance.Assets.Add(asset);
-                    break;
+                    continue;
                 }
                 case 2: {
                     if (tag.WireType != WireType.LENGTH) break;
                     var asset = Asset.FromBuffer(reader);
                     instance.DependentAssets.Add(asset);
-                    break;
+                    continue;
                 }
                 case 3:
                     if (tag.WireType != WireType.LENGTH) break;
                     instance.ExportInfo = reader.ReadString();
-                    break;
+                    continue;
                 default: break; // 忽略未知字段
             }
+            // 消耗一个未知标签
+            ProtobufHelper.ConsumeTag(reader, tag);
         }
         return instance;
     }
