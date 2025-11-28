@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11222.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiliastraUtility.Core", "MiliastraUtility.Core\MiliastraUtility.Core.csproj", "{83E8829F-2920-459A-B275-FBFA1C69DF7C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiliastraUtility.CLI", "MiliastraUtility.CLI\MiliastraUtility.CLI.csproj", "{6F3A9AFB-A9A0-49D2-9860-50A10447816F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{83E8829F-2920-459A-B275-FBFA1C69DF7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83E8829F-2920-459A-B275-FBFA1C69DF7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83E8829F-2920-459A-B275-FBFA1C69DF7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83E8829F-2920-459A-B275-FBFA1C69DF7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F3A9AFB-A9A0-49D2-9860-50A10447816F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F3A9AFB-A9A0-49D2-9860-50A10447816F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F3A9AFB-A9A0-49D2-9860-50A10447816F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F3A9AFB-A9A0-49D2-9860-50A10447816F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F492982D-E57C-4339-82A6-832BFB39755E}
+	EndGlobalSection
+EndGlobal
