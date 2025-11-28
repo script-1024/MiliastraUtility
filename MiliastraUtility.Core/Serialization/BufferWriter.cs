@@ -37,6 +37,26 @@ public ref struct BufferWriter(Span<byte> buffer)
     }
 
     /// <summary>
+    /// 依照指定基准点调整读取位置。
+    /// </summary>
+    /// <param name="offset">偏移</param>
+    /// <param name="origin">基准点</param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public void Seek(int offset, SeekOrigin origin)
+    {
+        int newPos = origin switch
+        {
+            SeekOrigin.Begin => offset,
+            SeekOrigin.Current => Position + offset,
+            SeekOrigin.End => Length + offset,
+            _ => Position
+        };
+
+        if (newPos < 0 || newPos > Length) throw new ArgumentOutOfRangeException(nameof(offset), "新的位置超出缓冲区范围");
+        Position = newPos;
+    }
+
+    /// <summary>
     /// 向缓冲区写入一个字节。
     /// </summary>
     /// <param name="value"></param>
