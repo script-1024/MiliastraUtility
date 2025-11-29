@@ -110,4 +110,30 @@ public ref struct Varint : ISerializable, IDeserializable<Varint>
         v.Deserialize(reader);
         return v;
     }
+
+    /// <summary>
+    /// 将 Varint 解释为枚举类型 TEnum 的值。
+    /// </summary>
+    /// <remarks>若该值不在 TEnum 的定义范围内，则返回指定的 fallback 值。</remarks>
+    /// <typeparam name="TEnum">枚举类型</typeparam>
+    /// <param name="fallback">失败值</param>
+    public readonly TEnum AsEnum<TEnum>(TEnum fallback) where TEnum : struct, Enum
+    {
+        int value = GetValue();
+        return Enum.IsDefined(typeof(TEnum), value)
+            ? (TEnum)Enum.ToObject(typeof(TEnum), value) : fallback;
+    }
+
+    /// <summary>
+    /// 从读取器获取一个 Varint，并将其解释为枚举类型 TEnum 的值。
+    /// </summary>
+    /// <remarks>若该值不在 TEnum 的定义范围内，则返回指定的 fallback 值。</remarks>
+    /// <typeparam name="TEnum">枚举类型</typeparam>
+    /// <param name="reader">读取器</param>
+    /// <param name="fallback">失败值</param>
+    public static TEnum AsEnum<TEnum>(BufferReader reader, TEnum fallback) where TEnum : struct, Enum
+    {
+        var v = FromBuffer(reader);
+        return v.AsEnum(fallback);
+    }
 }
