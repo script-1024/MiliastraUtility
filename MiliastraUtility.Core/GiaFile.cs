@@ -11,19 +11,19 @@ public sealed class GiaFile : GiFile
     /// 获取资产列表。
     /// </summary>
     /// <remarks>id = 1</remarks>
-    public IList<Asset>? Assets { get; private set; }
+    public List<Asset> Assets { get; private set; } = [];
 
     /// <summary>
-    /// 获取依赖的资产列表。
+    /// 获取关联资产列表。
     /// </summary>
     /// <remarks>id = 2</remarks>
-    public IList<Asset>? DependentAssets { get; private set; }
+    public List<Asset> RelatedAssets { get; private set; } = [];
 
     /// <summary>
     /// 获取或设置导出信息字符串。
     /// </summary>
     /// <remarks>id = 3</remarks>
-    public string? ExportInfo { get; set; }
+    public string ExportInfo { get; set; } = string.Empty;
 
     /// <summary>
     /// 从指定路径加载 GIA 文件。
@@ -34,8 +34,6 @@ public sealed class GiaFile : GiFile
     {
         var instance = new GiaFile();
         var reader = ReadFromFile(path, instance, out int length);
-        instance.Assets = [];
-        instance.DependentAssets = [];
 
         int end = reader.Position + length;
         while (reader.Position < end) // 读取所有字段
@@ -52,7 +50,7 @@ public sealed class GiaFile : GiFile
                 case 2: {
                     if (tag.Type != WireType.LENGTH) break;
                     var asset = Asset.FromBuffer(reader);
-                    instance.DependentAssets.Add(asset);
+                    instance.RelatedAssets.Add(asset);
                     continue;
                 }
                 case 3:

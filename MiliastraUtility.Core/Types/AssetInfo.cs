@@ -8,10 +8,31 @@ namespace MiliastraUtility.Core.Types;
 /// <remarks>大多数情况下应使用 <see cref="AssetSpecialType.Default"/>。</remarks>
 public enum AssetSpecialType : byte
 {
-    Unknown   = 0,
-    Default   = 1,
-    NodeGraph = 23,
-    Camera    = 25,
+    /// <summary>
+    /// 未知类型
+    /// </summary>
+    Unknown = 0,
+
+    /// <summary>
+    /// 默认类型（无特殊类型）
+    /// </summary>
+    Default = 1,
+
+    /// <summary>
+    /// 节点图
+    /// </summary>
+    NodeGraph = 5,
+
+    /// <summary>
+    /// 复合节点
+    /// </summary>
+    /// <remarks>本质上，服务器信号和结构体其实也只是定义了专门用于操作它们的特殊节点而已</remarks>
+    Composite = 23,
+
+    /// <summary>
+    /// 镜头配置
+    /// </summary>
+    Camera = 25,
 }
 
 /// <summary>
@@ -19,14 +40,14 @@ public enum AssetSpecialType : byte
 /// </summary>
 public enum AssetCategory : byte
 {
-    Special     = 0,
-    Prefab      = 1,
-    Entity      = 2,
-    Config      = 3,
-    Terrain     = 5,
-    UIControl   = 8,
-    PresetPoint = 9,
-    Struct      = 15,
+    Special       = 0,
+    Prefab        = 1,
+    Entity        = 2,
+    Configuration = 3,
+    Terrain       = 5,
+    UI            = 8,
+    PresetPoint   = 9,
+    Structure     = 15,
 }
 
 /// <summary>
