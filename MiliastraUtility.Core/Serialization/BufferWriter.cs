@@ -207,6 +207,7 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteString(string value, int length)
     {
+        if (length == 0) return;
         EnsureAvailable(length);
         if (length != Encoding.UTF8.GetBytes(value, Span[Position..]))
             throw new ArgumentException("提供的长度与实际编码长度不符", nameof(length));

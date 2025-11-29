@@ -206,6 +206,7 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public string ReadString()
     {
         int length = Varint.FromBuffer(this).GetValue();
+        if (length == 0) return string.Empty;
         EnsureAvailable(length);
         string value = Encoding.UTF8.GetString(Span.Slice(Position, length));
         Position += length;
@@ -218,6 +219,7 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     /// <exception cref="EndOfStreamException"></exception>
     public string ReadString(int length)
     {
+        if (length == 0) return string.Empty;
         EnsureAvailable(length);
         string value = Encoding.UTF8.GetString(Span.Slice(Position, length));
         Position += length;
