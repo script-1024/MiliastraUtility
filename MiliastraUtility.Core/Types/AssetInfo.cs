@@ -86,9 +86,6 @@ public struct AssetInfo : ISerializable, IDeserializable<AssetInfo>
     public void Deserialize(BufferReader reader)
     {
         int end = reader.Position + Varint.FromBuffer(reader).GetValue();
-        SpecialType = AssetSpecialType.Unknown;
-        Category = AssetCategory.Special;
-        Guid = Guid.Zero;
 
         while (reader.Position < end)
         {
