@@ -2,7 +2,7 @@ using MiliastraUtility.Core.Serialization;
 
 namespace MiliastraUtility.Core;
 
-public enum GiFileType { Unknown = 0, Gip = 1, Gil = 2, Gia = 3, Gir = 4 }
+public enum GiFileType : byte { Unknown = 0, Gip = 1, Gil = 2, Gia = 3, Gir = 4 }
 
 public abstract class GiFile
 {
