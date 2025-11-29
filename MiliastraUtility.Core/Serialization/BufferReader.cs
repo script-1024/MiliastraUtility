@@ -211,4 +211,16 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
         Position += length;
         return value;
     }
+
+    /// <summary>
+    /// 从缓冲区读取一个指定长度的 UTF-8 字符串。
+    /// </summary>
+    /// <exception cref="EndOfStreamException"></exception>
+    public string ReadString(int length)
+    {
+        EnsureAvailable(length);
+        string value = Encoding.UTF8.GetString(Span.Slice(Position, length));
+        Position += length;
+        return value;
+    }
 }
