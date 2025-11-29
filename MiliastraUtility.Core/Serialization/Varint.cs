@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -75,6 +76,20 @@ public ref struct Varint : ISerializable, IDeserializable<Varint>
     }
 
     public readonly int GetBufferSize() => Size;
+
+    public static int GetBufferSize(uint value)
+    {
+        if (value == 0) return 1; // 当 value 为零时也需要一字节的存储空间
+        int bits = 32 - BitOperations.LeadingZeroCount(value);
+        return (bits + 6) / 7;
+    }
+
+    public static int GetBufferSize(ulong value)
+    {
+        if (value == 0) return 1; // 当 value 为零时也需要一字节的存储空间
+        int bits = 64 - BitOperations.LeadingZeroCount(value);
+        return (bits + 6) / 7;
+    }
 
     public void Serialize(BufferWriter writer) => writer.WriteSpan(GetSpan());
 
