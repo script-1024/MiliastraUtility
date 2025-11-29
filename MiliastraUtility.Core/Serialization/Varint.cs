@@ -62,7 +62,7 @@ public ref struct Varint : ISerializable, IDeserializable<Varint>
         return v;
     }
 
-    public readonly ulong GetValue()
+    public readonly Integer GetValue()
     {
         ulong result = 0;
         for (int i = 0; i < Size; i++)
