@@ -16,15 +16,18 @@ public enum WireType : byte
 /// <summary>
 /// 表示 Protobuf 标签。
 /// </summary>
-public readonly struct ProtoTag(uint id, WireType type)
+public readonly struct ProtoTag : ISerializable
 {
-    public uint Id => id;
-    public WireType Type => type;
+    public uint Id { get; init; }
+    public WireType Type { get; init; }
+    public uint Value => (Id << 3) | (byte)Type;
 
-    public static implicit operator ProtoTag(Varint varint)
+    public ProtoTag(uint id, WireType type) { Id = id; Type = type; }
+
+    public ProtoTag(uint value)
     {
-        uint value = varint.GetValue();
-        var type = (value & 0b111) switch
+        Id = value >> 3;
+        Type = (value & 0b111) switch
         {
             0 => WireType.VARINT,
             1 => WireType.FIXED64,
@@ -32,11 +35,11 @@ public readonly struct ProtoTag(uint id, WireType type)
             5 => WireType.FIXED32,
             _ => throw new NotSupportedException()
         };
-        return new ProtoTag(value >> 3, type);
     }
 
-    public static implicit operator Varint(ProtoTag tag)
-        => Varint.FromUInt32((tag.Id << 3) | (uint)tag.Type);
+    public static implicit operator ProtoTag(uint value) => new(value);
+    public static implicit operator ProtoTag(Varint varint) => new(varint.GetValue());
+    public static implicit operator Varint(ProtoTag tag) => Varint.FromUInt32(tag.Value);
 
     /// <summary>
     /// 消耗一个无效或未知的标签
@@ -61,4 +64,8 @@ public readonly struct ProtoTag(uint id, WireType type)
             default: throw new NotSupportedException();
         }
     }
+
+    public int GetBufferSize() => Varint.GetBufferSize(Value);
+
+    public void Serialize(BufferWriter writer) => Varint.FromUInt32(Value).Serialize(writer);
 }
