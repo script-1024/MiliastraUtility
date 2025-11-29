@@ -60,19 +60,19 @@ public struct AssetInfo : ISerializable, IDeserializable<AssetInfo>
     /// </summary>
     /// <remarks>大多数情况下此字段都应被设为 <see cref="AssetSpecialType.Default"/></remarks>
     public AssetSpecialType SpecialType { get; set; }
-    private const byte TagSpecial = (2 << 3) | (byte)WireType.VARINT;
+    private static readonly ProtoTag TagSpecial = new(2, WireType.VARINT);
 
     /// <summary>
     /// 获取或设置资产的类别。
     /// </summary>
     public AssetCategory Category { get; set; }
-    private const byte TagCategory = (3 << 3) | (byte)WireType.VARINT;
+    private static readonly ProtoTag TagCategory = new(3, WireType.VARINT);
 
     /// <summary>
     /// 获取或设置资产的全局唯一标识符。
     /// </summary>
     public Guid Guid { get; set; }
-    private const byte TagGuid = (4 << 3) | (byte)WireType.VARINT;
+    private static readonly ProtoTag TagGuid = new(4, WireType.VARINT);
 
 
     public readonly int GetBufferSize()
@@ -87,19 +87,19 @@ public struct AssetInfo : ISerializable, IDeserializable<AssetInfo>
     {
         if (SpecialType != AssetSpecialType.Unknown)
         {
-            writer.WriteByte(TagSpecial);
+            TagSpecial.Serialize(writer);
             writer.WriteByte((byte)SpecialType);
         }
 
         if (Category != AssetCategory.Special)
         {
-            writer.WriteByte(TagCategory);
+            TagCategory.Serialize(writer);
             writer.WriteByte((byte)Category);
         }
 
         if (!Guid.IsZero)
         {
-            writer.WriteByte(TagGuid);
+            TagGuid.Serialize(writer);
             Guid.Serialize(writer);
         }
     }
