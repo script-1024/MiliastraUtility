@@ -13,6 +13,8 @@ public ref struct Varint : ISerializable, IDeserializable<Varint>
     private bool IsZigZagged;
     private VarintBuffer Buffer;
 
+    public bool IsZero { get; private set; }
+
     public Span<byte> GetSpan() => MemoryMarshal.CreateSpan(ref Unsafe.As<VarintBuffer, byte>(ref Buffer), Size);
 
     private static uint ZigZagEncode32(int value) => (uint)((value << 1) ^ (value >> 31));
@@ -21,31 +23,28 @@ public ref struct Varint : ISerializable, IDeserializable<Varint>
 
     private static ulong ZigZagDecode(ulong value) => (value >> 1) ^ unchecked(~(value & 1) + 1);
 
-    public static Varint FromUInt32(uint value)
-    {
-        var v = new Varint();
-        do
-        {
-            byte data = (byte)(value & 0x7F);
-            value >>= 7;
-            if (value != 0) data |= 0x80;
-            v.Buffer[v.Size] = data;
-            v.Size++;
-        } while (value != 0);
-        return v;
-    }
+    public static Varint FromUInt32(uint value) => FromUInt64(value);
 
     public static Varint FromUInt64(ulong value)
     {
         var v = new Varint();
-        do
+
+        if (value == 0)
+        {
+            v.Size = 1;
+            v.IsZero = true;
+            v.Buffer[0] = 0;
+            return v;
+        }
+
+        while (value != 0)
         {
             byte data = (byte)(value & 0x7F);
             value >>= 7;
             if (value != 0) data |= 0x80;
-            v.Buffer[v.Size] = data;
-            v.Size++;
-        } while (value != 0);
+            v.Buffer[v.Size++] = data;
+        }
+
         return v;
     }
 

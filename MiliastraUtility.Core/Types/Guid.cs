@@ -5,6 +5,9 @@ namespace MiliastraUtility.Core.Types;
 public struct Guid(uint value) : ISerializable, IDeserializable<Guid>
 {
     private static uint Assigned = 0x40000000; // 原神似乎是从 1073741824 开始分配 GUID 的
+    public static readonly Guid Zero = new(0);
+
+    public readonly bool IsZero => Value == 0;
     public uint Value { get; set; } = value;
 
     public static implicit operator Guid(uint value) => new(value);
