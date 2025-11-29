@@ -20,7 +20,7 @@ public enum AssetSpecialType : byte
 public enum AssetCategory : byte
 {
     Special     = 0,
-    Component   = 1,
+    Prefab      = 1,
     Entity      = 2,
     Config      = 3,
     Terrain     = 5,
