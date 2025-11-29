@@ -205,7 +205,21 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     /// <exception cref="EndOfStreamException"></exception>
     public string ReadString()
     {
-        int length = (int)Varint.FromBuffer(this).GetValue();
+        int length = Varint.FromBuffer(this).GetValue();
+        if (length == 0) return string.Empty;
+        EnsureAvailable(length);
+        string value = Encoding.UTF8.GetString(Span.Slice(Position, length));
+        Position += length;
+        return value;
+    }
+
+    /// <summary>
+    /// 从缓冲区读取一个指定长度的 UTF-8 字符串。
+    /// </summary>
+    /// <exception cref="EndOfStreamException"></exception>
+    public string ReadString(int length)
+    {
+        if (length == 0) return string.Empty;
         EnsureAvailable(length);
         string value = Encoding.UTF8.GetString(Span.Slice(Position, length));
         Position += length;

@@ -11,19 +11,19 @@ public sealed class GiaFile : GiFile
     /// 获取资产列表。
     /// </summary>
     /// <remarks>id = 1</remarks>
-    public IList<Asset>? Assets { get; private set; }
+    public List<Asset> Assets { get; private set; } = [];
 
     /// <summary>
-    /// 获取依赖的资产列表。
+    /// 获取关联资产列表。
     /// </summary>
     /// <remarks>id = 2</remarks>
-    public IList<Asset>? DependentAssets { get; private set; }
+    public List<Asset> RelatedAssets { get; private set; } = [];
 
     /// <summary>
     /// 获取或设置导出信息字符串。
     /// </summary>
     /// <remarks>id = 3</remarks>
-    public string? ExportInfo { get; set; }
+    public string ExportInfo { get; set; } = string.Empty;
 
     /// <summary>
     /// 从指定路径加载 GIA 文件。
@@ -34,33 +34,33 @@ public sealed class GiaFile : GiFile
     {
         var instance = new GiaFile();
         var reader = ReadFromFile(path, instance, out int length);
-        instance.Assets = [];
-        instance.DependentAssets = [];
 
         int end = reader.Position + length;
         while (reader.Position < end) // 读取所有字段
         {
-            ProtobufTag tag = Varint.FromBuffer(reader);
+            ProtoTag tag = Varint.FromBuffer(reader);
             switch (tag.Id) // 根据标签 ID 解析字段，忽略未知标签
             {
                 case 1: {
-                    if (tag.WireType != WireType.LENGTH) break;
+                    if (tag.Type != WireType.LENGTH) break;
                     var asset = Asset.FromBuffer(reader);
                     instance.Assets.Add(asset);
-                    break;
+                    continue;
                 }
                 case 2: {
-                    if (tag.WireType != WireType.LENGTH) break;
+                    if (tag.Type != WireType.LENGTH) break;
                     var asset = Asset.FromBuffer(reader);
-                    instance.DependentAssets.Add(asset);
-                    break;
+                    instance.RelatedAssets.Add(asset);
+                    continue;
                 }
                 case 3:
-                    if (tag.WireType != WireType.LENGTH) break;
+                    if (tag.Type != WireType.LENGTH) break;
                     instance.ExportInfo = reader.ReadString();
-                    break;
+                    continue;
                 default: break; // 忽略未知字段
             }
+            // 消耗一个未知标签
+            tag.Consume(reader);
         }
         return instance;
     }

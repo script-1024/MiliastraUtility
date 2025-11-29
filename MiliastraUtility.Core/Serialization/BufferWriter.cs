@@ -59,7 +59,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 向缓冲区写入一个字节。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteByte(byte value)
     {
@@ -70,7 +69,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 向缓冲区写入一串字节序列。
     /// </summary>
-    /// <param name="source"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteSpan(Span<byte> source)
     {
@@ -82,7 +80,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 以小端序向缓冲区写入一个32位有符号整数。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteInt32LE(int value)
     {
@@ -94,7 +91,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 以大端序向缓冲区写入一个32位有符号整数。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteInt32BE(int value)
     {
@@ -106,7 +102,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 以小端序向缓冲区写入一个32位无符号整数。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteUInt32LE(uint value)
     {
@@ -118,7 +113,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 以大端序向缓冲区写入一个32位无符号整数。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteUInt32BE(uint value)
     {
@@ -130,7 +124,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 以小端序向缓冲区写入一个64位有符号整数。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteInt64LE(long value)
     {
@@ -142,7 +135,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 以大端序向缓冲区写入一个64位有符号整数。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteInt64BE(long value)
     {
@@ -154,7 +146,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 以小端序向缓冲区写入一个64位无符号整数。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteUInt64LE(ulong value)
     {
@@ -166,7 +157,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 以大端序向缓冲区写入一个64位无符号整数。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteUInt64BE(ulong value)
     {
@@ -178,7 +168,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 向缓冲区写入一个单精度浮点数。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteFloat(float value)
     {
@@ -190,7 +179,6 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 向缓冲区写入一个双精度浮点数。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteDouble(double value)
     {
@@ -202,14 +190,27 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <summary>
     /// 向缓冲区写入一个带有长度前缀的 UTF-8 字符串。
     /// </summary>
-    /// <param name="value"></param>
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteString(string value)
     {
-        int count = Encoding.UTF8.GetByteCount(value);
-        Varint.FromUInt32((uint)count).Serialize(this);
-        EnsureAvailable(count);
-        int length = Encoding.UTF8.GetBytes(value, Span[Position..]);
+        Integer length = Encoding.UTF8.GetByteCount(value);
+        Varint.FromUInt32(length).Serialize(this);
+        EnsureAvailable(length);
+        Encoding.UTF8.GetBytes(value, Span[Position..]);
+        Position += length;
+    }
+
+    /// <summary>
+    /// 向缓冲区写入一个 UTF-8 字符串。
+    /// </summary>
+    /// <remarks>需要提供字符串经过 UTF-8 编码后的长度，不包含终止符。</remarks>
+    /// <exception cref="EndOfStreamException"></exception>
+    public void WriteString(string value, int length)
+    {
+        if (length == 0) return;
+        EnsureAvailable(length);
+        if (length != Encoding.UTF8.GetBytes(value, Span[Position..]))
+            throw new ArgumentException("提供的长度与实际编码长度不符", nameof(length));
         Position += length;
     }
 }
