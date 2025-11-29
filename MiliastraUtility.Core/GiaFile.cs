@@ -40,29 +40,29 @@ public sealed class GiaFile : GiFile
         int end = reader.Position + length;
         while (reader.Position < end) // 读取所有字段
         {
-            ProtobufTag tag = Varint.FromBuffer(reader);
+            ProtoTag tag = Varint.FromBuffer(reader);
             switch (tag.Id) // 根据标签 ID 解析字段，忽略未知标签
             {
                 case 1: {
-                    if (tag.WireType != WireType.LENGTH) break;
+                    if (tag.Type != WireType.LENGTH) break;
                     var asset = Asset.FromBuffer(reader);
                     instance.Assets.Add(asset);
                     continue;
                 }
                 case 2: {
-                    if (tag.WireType != WireType.LENGTH) break;
+                    if (tag.Type != WireType.LENGTH) break;
                     var asset = Asset.FromBuffer(reader);
                     instance.DependentAssets.Add(asset);
                     continue;
                 }
                 case 3:
-                    if (tag.WireType != WireType.LENGTH) break;
+                    if (tag.Type != WireType.LENGTH) break;
                     instance.ExportInfo = reader.ReadString();
                     continue;
                 default: break; // 忽略未知字段
             }
             // 消耗一个未知标签
-            ProtobufHelper.ConsumeTag(reader, tag);
+            tag.Consume(reader);
         }
         return instance;
     }
