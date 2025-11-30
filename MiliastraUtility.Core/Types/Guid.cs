@@ -4,7 +4,7 @@ using MiliastraUtility.Core.Serialization;
 
 namespace MiliastraUtility.Core.Types;
 
-[JsonConverter(typeof(GuidJsonConverter))]
+[JsonConverter(typeof(JsonGuidConverter))]
 public struct Guid(uint value) : ISerializable, IDeserializable<Guid>
 {
     private static uint Assigned = 0x40000000; // 原神似乎是从 1073741824 开始分配 GUID 的
@@ -34,7 +34,7 @@ public struct Guid(uint value) : ISerializable, IDeserializable<Guid>
         => Varint.Deserialize(ref reader).GetValue();
 }
 
-internal sealed class GuidJsonConverter : JsonConverter<Guid>
+internal sealed class JsonGuidConverter : JsonConverter<Guid>
 {
     public override Guid Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         => reader.GetUInt32();

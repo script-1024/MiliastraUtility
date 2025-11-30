@@ -14,8 +14,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
 
     // 2: 关联资产的元信息列表
     [JsonPropertyOrder(2)]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<AssetInfo> RelatedInfo { get; set; } = [];
+    public IList<AssetInfo> RelatedInfo { get; set; } = [];
     private static readonly ProtoTag TagRelatedInfo = new(2, WireType.LENGTH);
     private Integer[] szRelated = [];
     private bool hasRelated = false;

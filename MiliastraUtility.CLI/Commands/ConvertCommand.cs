@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Text.Unicode;
 using MiliastraUtility.Core;
 
@@ -17,11 +18,17 @@ public class ConvertCommand
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         // 防止 Unicode 字符被转为 `\uXXXX`
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+        // 转换枚举成可读的字符串
         Converters =
         {
             new JsonStringEnumConverter<GiFileType>(JsonNamingPolicy.CamelCase),
             new JsonStringEnumConverter()
         },
+        // 忽略空集合
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver
+        {
+            Modifiers = { IgnoreEmptyCollectionsModifier }
+        }
     };
 
     public static Command Create()
@@ -100,7 +107,7 @@ public class ConvertCommand
     {
         var gia = GiaFile.ReadFromFile(file.FullName);
         string json = JsonSerializer.Serialize(gia, options);
-        string path = string.Concat(dir.FullName, Path.GetFileNameWithoutExtension(file.Name), ".json");
+        string path = string.Concat(dir.FullName, '\\', Path.GetFileNameWithoutExtension(file.Name), ".json");
         await File.WriteAllTextAsync(path, json);
     }
 
@@ -135,7 +142,7 @@ public class ConvertCommand
             case GiFileType.Gip: throw new NotSupportedException();
             case GiFileType.Gil: throw new NotSupportedException();
             case GiFileType.Gia:{
-                string path = string.Concat(dir.FullName, "\\", Path.GetFileNameWithoutExtension(file.Name), ".gia");
+                string path = string.Concat(dir.FullName, '\\', Path.GetFileNameWithoutExtension(file.Name), ".gia");
                 var gia = JsonSerializer.Deserialize<GiaFile>(data, options)!;
                 gia.WriteToFile(path);
                 break;
@@ -146,4 +153,24 @@ public class ConvertCommand
     }
 
     static async Task NoEffect(FileInfo file, DirectoryInfo dir) { }
+
+    static void IgnoreEmptyCollectionsModifier(JsonTypeInfo typeInfo)
+    {
+        if (typeInfo.Kind != JsonTypeInfoKind.Object) return;
+
+        foreach (var prop in typeInfo.Properties)
+        {
+            if (typeof(System.Collections.IEnumerable).IsAssignableFrom(prop.PropertyType) && prop.PropertyType != typeof(string))
+            {
+                prop.ShouldSerialize = (obj, value) =>
+                {
+                    if (value is System.Collections.IEnumerable enumerable)
+                    {
+                        return enumerable.Cast<object>().Any();
+                    }
+                    return true;
+                };
+            }
+        }
+    }
 }

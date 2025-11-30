@@ -15,7 +15,7 @@ public sealed class GiaFile : GiFile
     /// </summary>
     /// <remarks>id = 1</remarks>
     [JsonPropertyOrder(1)]
-    public List<Asset> Assets { get; set; } = [];
+    public IList<Asset> Assets { get; set; } = [];
     private static readonly ProtoTag TagAssets = new(1, WireType.LENGTH);
     private Integer[] szAssets = [];
     private bool hasAssets = false;
@@ -25,8 +25,7 @@ public sealed class GiaFile : GiFile
     /// </summary>
     /// <remarks>id = 2</remarks>
     [JsonPropertyOrder(2)]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<Asset> RelatedAssets { get; set; } = [];
+    public IList<Asset> RelatedAssets { get; set; } = [];
     private static readonly ProtoTag TagRelatedAssets = new(2, WireType.LENGTH);
     private Integer[] szRelatedAssets = [];
     private bool hasRelatedAssets = false;
