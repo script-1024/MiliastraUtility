@@ -1,6 +1,8 @@
-using System.Text.Json.Serialization;
 using MiliastraUtility.Core.Serialization;
 using MiliastraUtility.Core.Types;
+using System.Text;
+using System.Text.Json.Serialization;
+using System.Xml.Linq;
 
 namespace MiliastraUtility.Core;
 
@@ -14,7 +16,10 @@ public sealed class GiaFile : GiFile
     /// </summary>
     /// <remarks>id = 1</remarks>
     [JsonPropertyOrder(1)]
-    public List<Asset> Assets { get; private set; } = [];
+    public List<Asset>? Assets { get; private set; }
+    private static readonly ProtoTag TagAssets = new(1, WireType.LENGTH);
+    private Integer[] szAssets = [];
+    private bool hasAssets = false;
 
     /// <summary>
     /// 获取关联资产列表。
@@ -23,6 +28,9 @@ public sealed class GiaFile : GiFile
     [JsonPropertyOrder(2)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<Asset>? RelatedAssets { get; private set; }
+    private static readonly ProtoTag TagRelatedAssets = new(2, WireType.LENGTH);
+    private Integer[] szRelatedAssets = [];
+    private bool hasRelatedAssets = false;
 
     /// <summary>
     /// 获取或设置导出信息字符串。
@@ -30,6 +38,44 @@ public sealed class GiaFile : GiFile
     /// <remarks>id = 3</remarks>
     [JsonPropertyOrder(3)]
     public string ExportInfo { get; set; } = string.Empty;
+    private static readonly ProtoTag TagExportInfo = new(3, WireType.LENGTH);
+    private Integer szExportInfo = 0;
+
+    private int GetBufferSize()
+    {
+        int size = 24; // 文件头 + 尾部标记
+
+        hasAssets = false;
+        if (Assets?.Count > 0)
+        {
+            szAssets = new Integer[Assets.Count];
+            for (int i = 0; i < Assets.Count; i++)
+            {
+                szAssets[i] = Assets[i].GetBufferSize();
+                if (szAssets[i] == 0) continue; // 跳过空对象
+                size += 1 + Varint.GetBufferSize((uint)szAssets[i]) + szAssets[i];
+                hasAssets = true;
+            }
+        }
+
+        hasRelatedAssets = false;
+        if (RelatedAssets?.Count > 0)
+        {
+            szRelatedAssets = new Integer[RelatedAssets.Count];
+            for (int i = 0; i < RelatedAssets.Count; i++)
+            {
+                szRelatedAssets[i] = RelatedAssets[i].GetBufferSize();
+                if (szRelatedAssets[i] == 0) continue; // 跳过空对象
+                size += 1 + Varint.GetBufferSize((uint)szRelatedAssets[i]) + szRelatedAssets[i];
+                hasRelatedAssets = true;
+            }
+        }
+
+        szExportInfo = Encoding.UTF8.GetByteCount(ExportInfo);
+        if (szExportInfo != 0) size += 1 + Varint.GetBufferSize((uint)szExportInfo) + szExportInfo;
+
+        return size;
+    }
 
     /// <summary>
     /// 从指定路径加载 GIA 文件。
@@ -50,6 +96,7 @@ public sealed class GiaFile : GiFile
                 case 1: {
                     if (tag.Type != WireType.LENGTH) break;
                     var asset = Asset.Deserialize(ref reader);
+                    instance.Assets ??= [];
                     instance.Assets.Add(asset);
                     continue;
                 }
@@ -71,5 +118,43 @@ public sealed class GiaFile : GiFile
         }
 
         return instance;
+    }
+
+    public void WriteToFile(string path)
+    {
+        int size = GetBufferSize();
+        var writer = new BufferWriter(new byte[size]);
+        WriteToFile(this, ref writer); // 写入元信息
+
+        if (hasAssets)
+        {
+            for (int i = 0; i < Assets!.Count; i++)
+            {
+                if (szAssets[i] == 0) continue; // 跳过空对象
+                TagAssets.Serialize(ref writer);
+                Varint.FromUInt32(szAssets[i]).Serialize(ref writer);
+                Assets[i].Serialize(ref writer);
+            }
+        }
+
+        if (hasRelatedAssets)
+        {
+            for (int i = 0; i < RelatedAssets!.Count; i++)
+            {
+                if (szRelatedAssets[i] == 0) continue; // 跳过空对象
+                TagRelatedAssets.Serialize(ref writer);
+                Varint.FromUInt32(szRelatedAssets[i]).Serialize(ref writer);
+                RelatedAssets[i].Serialize(ref writer);
+            }
+        }
+
+        if (szExportInfo != 0)
+        {
+            TagExportInfo.Serialize(ref writer);
+            Varint.FromUInt32(szExportInfo).Serialize(ref writer);
+            writer.WriteString(ExportInfo, szExportInfo); // 已经计算过长度了，不用再计算一次
+        }
+
+        File.WriteAllBytes(path, writer.Span);
     }
 }

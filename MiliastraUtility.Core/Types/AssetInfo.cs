@@ -50,6 +50,7 @@ public enum AssetCategory
     Terrain       = 5,
     UI            = 8,
     PresetPoint   = 9,
+    Decoration    = 14,
     Structure     = 15,
 }
 
