@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MiliastraUtility.Core.Serialization;
 
 namespace MiliastraUtility.Core.Types;
@@ -63,18 +64,21 @@ public struct AssetInfo : ISerializable, IDeserializable<AssetInfo>
     /// <remarks>
     /// 大多数情况下此字段都应被设为 <see cref="AssetSpecialType.Default"/>
     /// </remarks>
+    [JsonPropertyOrder(2)]
     public AssetSpecialType SpecialType { get; set; }
     private static readonly ProtoTag TagSpecial = new(2, WireType.VARINT);
 
     /// <summary>
     /// 获取或设置资产的类别。
     /// </summary>
+    [JsonPropertyOrder(3)]
     public AssetCategory Category { get; set; }
     private static readonly ProtoTag TagCategory = new(3, WireType.VARINT);
 
     /// <summary>
     /// 获取或设置资产的全局唯一标识符。
     /// </summary>
+    [JsonPropertyOrder(4)]
     public Guid Guid { get; set; }
     private static readonly ProtoTag TagGuid = new(4, WireType.VARINT);
 

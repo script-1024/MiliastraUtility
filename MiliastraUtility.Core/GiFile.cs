@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MiliastraUtility.Core.Serialization;
 
 namespace MiliastraUtility.Core;
@@ -9,6 +10,7 @@ public abstract class GiFile
     /// <summary>
     /// 获取文件格式的版本号。
     /// </summary>
+    [JsonPropertyOrder(-1)]
     public uint Version { get; protected set; } = 1;
 
     /// <summary>

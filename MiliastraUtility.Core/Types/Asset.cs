@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using MiliastraUtility.Core.Serialization;
 
 namespace MiliastraUtility.Core.Types;
@@ -9,22 +10,27 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
         => Varint.FromUInt32(szContent).GetBufferSize();
 
     // 1: 资产的元信息
+    [JsonPropertyOrder(1)]
     public AssetInfo Info { get; set; }
     private static readonly ProtoTag TagInfo = new(1, WireType.LENGTH);
     private Integer szInfo = 0;
 
     // 2: 相关资产的元信息列表
-    public List<AssetInfo> RelatedInfo { get; set; } = [];
+    [JsonPropertyOrder(2)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<AssetInfo>? RelatedInfo { get; set; }
     private static readonly ProtoTag TagRelatedInfo = new(2, WireType.LENGTH);
     private Integer[] szRelated = [];
     private bool hasRelated = false;
 
     // 3: 资产名称
+    [JsonPropertyOrder(3)]
     public string Name { get; set; } = string.Empty;
     private static readonly ProtoTag TagName = new(3, WireType.LENGTH);
     private Integer szName = 0;
 
     // 5: 资产类型
+    [JsonPropertyOrder(5)]
     public AssetType Type { get; set; }
     private static readonly ProtoTag TagType = new(5, WireType.VARINT);
 
@@ -41,13 +47,16 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
         if (szInfo != 0) size += 1 + GetSizeOfLengthVarint(szInfo) + szInfo;
 
         hasRelated = false;
-        if (RelatedInfo.Count > 0) szRelated = new Integer[RelatedInfo.Count];
-        for (int i = 0; i < RelatedInfo.Count; i++)
+        if (RelatedInfo?.Count > 0)
         {
-            szRelated[i] = RelatedInfo[i].GetBufferSize();
-            if (szRelated[i] == 0) continue; // 跳过空对象
-            size += 1 + GetSizeOfLengthVarint(szRelated[i]) + szRelated[i];
-            hasRelated = true;
+            szRelated = new Integer[RelatedInfo.Count];
+            for (int i = 0; i < RelatedInfo.Count; i++)
+            {
+                szRelated[i] = RelatedInfo[i].GetBufferSize();
+                if (szRelated[i] == 0) continue; // 跳过空对象
+                size += 1 + GetSizeOfLengthVarint(szRelated[i]) + szRelated[i];
+                hasRelated = true;
+            }
         }
 
         szName = Encoding.UTF8.GetByteCount(Name);
@@ -74,7 +83,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
 
         if (hasRelated)
         {
-            for (int i = 0; i < RelatedInfo.Count; i++)
+            for (int i = 0; i < RelatedInfo!.Count; i++)
             {
                 if (szRelated[i] == 0) continue; // 跳过空对象
                 TagRelatedInfo.Serialize(ref writer);
@@ -117,6 +126,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
                 case 2:
                     if (tag.Type != WireType.LENGTH) break;
                     var info = AssetInfo.Deserialize(ref reader);
+                    self.RelatedInfo ??= [];
                     self.RelatedInfo.Add(info);
                     continue;
                 case 3:

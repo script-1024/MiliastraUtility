@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MiliastraUtility.Core.Serialization;
 using MiliastraUtility.Core.Types;
 
@@ -5,24 +6,29 @@ namespace MiliastraUtility.Core;
 
 public sealed class GiaFile : GiFile
 {
+    [JsonPropertyOrder(0)]
     public override GiFileType Type => GiFileType.Gia;
 
     /// <summary>
     /// 获取资产列表。
     /// </summary>
     /// <remarks>id = 1</remarks>
+    [JsonPropertyOrder(1)]
     public List<Asset> Assets { get; private set; } = [];
 
     /// <summary>
     /// 获取关联资产列表。
     /// </summary>
     /// <remarks>id = 2</remarks>
-    public List<Asset> RelatedAssets { get; private set; } = [];
+    [JsonPropertyOrder(2)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<Asset>? RelatedAssets { get; private set; }
 
     /// <summary>
     /// 获取或设置导出信息字符串。
     /// </summary>
     /// <remarks>id = 3</remarks>
+    [JsonPropertyOrder(3)]
     public string ExportInfo { get; set; } = string.Empty;
 
     /// <summary>
@@ -50,6 +56,7 @@ public sealed class GiaFile : GiFile
                 case 2: {
                     if (tag.Type != WireType.LENGTH) break;
                     var asset = Asset.Deserialize(ref reader);
+                    instance.RelatedAssets ??= [];
                     instance.RelatedAssets.Add(asset);
                     continue;
                 }
