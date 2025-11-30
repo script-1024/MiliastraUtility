@@ -6,16 +6,13 @@ namespace MiliastraUtility.Core.Types;
 
 public sealed class Asset : ISerializable, IDeserializable<Asset>
 {
-    private static int GetSizeOfLengthVarint(Integer szContent)
-        => Varint.FromUInt32(szContent).GetBufferSize();
-
     // 1: 资产的元信息
     [JsonPropertyOrder(1)]
     public AssetInfo Info { get; set; }
     private static readonly ProtoTag TagInfo = new(1, WireType.LENGTH);
     private Integer szInfo = 0;
 
-    // 2: 相关资产的元信息列表
+    // 2: 关联资产的元信息列表
     [JsonPropertyOrder(2)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<AssetInfo>? RelatedInfo { get; set; }
@@ -44,7 +41,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
     {
         int size = 0;
         szInfo = Info.GetBufferSize();
-        if (szInfo != 0) size += 1 + GetSizeOfLengthVarint(szInfo) + szInfo;
+        if (szInfo != 0) size += 1 + Varint.GetBufferSize((uint)szInfo) + szInfo;
 
         hasRelated = false;
         if (RelatedInfo?.Count > 0)
@@ -54,13 +51,13 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
             {
                 szRelated[i] = RelatedInfo[i].GetBufferSize();
                 if (szRelated[i] == 0) continue; // 跳过空对象
-                size += 1 + GetSizeOfLengthVarint(szRelated[i]) + szRelated[i];
+                size += 1 + Varint.GetBufferSize((uint)szRelated[i]) + szRelated[i];
                 hasRelated = true;
             }
         }
 
         szName = Encoding.UTF8.GetByteCount(Name);
-        if (szName != 0) size += 1 + GetSizeOfLengthVarint(szName) + szName;
+        if (szName != 0) size += 1 + Varint.GetBufferSize((uint)szName) + szName;
 
         if (Type != AssetType.Unknown) size += 2;
         return size;
