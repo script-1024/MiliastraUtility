@@ -15,7 +15,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
     // 2: 关联资产的元信息列表
     [JsonPropertyOrder(2)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<AssetInfo>? RelatedInfo { get; set; }
+    public List<AssetInfo> RelatedInfo { get; set; } = [];
     private static readonly ProtoTag TagRelatedInfo = new(2, WireType.LENGTH);
     private Integer[] szRelated = [];
     private bool hasRelated = false;
@@ -44,7 +44,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
         if (szInfo != 0) size += 1 + Varint.GetBufferSize((uint)szInfo) + szInfo;
 
         hasRelated = false;
-        if (RelatedInfo?.Count > 0)
+        if (RelatedInfo.Count > 0)
         {
             szRelated = new Integer[RelatedInfo.Count];
             for (int i = 0; i < RelatedInfo.Count; i++)
@@ -80,7 +80,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
 
         if (hasRelated)
         {
-            for (int i = 0; i < RelatedInfo!.Count; i++)
+            for (int i = 0; i < RelatedInfo.Count; i++)
             {
                 if (szRelated[i] == 0) continue; // 跳过空对象
                 TagRelatedInfo.Serialize(ref writer);
@@ -123,7 +123,6 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
                 case 2:
                     if (tag.Type != WireType.LENGTH) break;
                     var info = AssetInfo.Deserialize(ref reader);
-                    self.RelatedInfo ??= [];
                     self.RelatedInfo.Add(info);
                     continue;
                 case 3:

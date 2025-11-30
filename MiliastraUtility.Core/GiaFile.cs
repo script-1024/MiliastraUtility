@@ -2,7 +2,6 @@ using MiliastraUtility.Core.Serialization;
 using MiliastraUtility.Core.Types;
 using System.Text;
 using System.Text.Json.Serialization;
-using System.Xml.Linq;
 
 namespace MiliastraUtility.Core;
 
@@ -16,7 +15,7 @@ public sealed class GiaFile : GiFile
     /// </summary>
     /// <remarks>id = 1</remarks>
     [JsonPropertyOrder(1)]
-    public List<Asset>? Assets { get; private set; }
+    public List<Asset> Assets { get; set; } = [];
     private static readonly ProtoTag TagAssets = new(1, WireType.LENGTH);
     private Integer[] szAssets = [];
     private bool hasAssets = false;
@@ -27,7 +26,7 @@ public sealed class GiaFile : GiFile
     /// <remarks>id = 2</remarks>
     [JsonPropertyOrder(2)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<Asset>? RelatedAssets { get; private set; }
+    public List<Asset> RelatedAssets { get; set; } = [];
     private static readonly ProtoTag TagRelatedAssets = new(2, WireType.LENGTH);
     private Integer[] szRelatedAssets = [];
     private bool hasRelatedAssets = false;
@@ -46,7 +45,7 @@ public sealed class GiaFile : GiFile
         int size = 24; // 文件头 + 尾部标记
 
         hasAssets = false;
-        if (Assets?.Count > 0)
+        if (Assets.Count > 0)
         {
             szAssets = new Integer[Assets.Count];
             for (int i = 0; i < Assets.Count; i++)
@@ -59,7 +58,7 @@ public sealed class GiaFile : GiFile
         }
 
         hasRelatedAssets = false;
-        if (RelatedAssets?.Count > 0)
+        if (RelatedAssets.Count > 0)
         {
             szRelatedAssets = new Integer[RelatedAssets.Count];
             for (int i = 0; i < RelatedAssets.Count; i++)
@@ -96,14 +95,12 @@ public sealed class GiaFile : GiFile
                 case 1: {
                     if (tag.Type != WireType.LENGTH) break;
                     var asset = Asset.Deserialize(ref reader);
-                    instance.Assets ??= [];
                     instance.Assets.Add(asset);
                     continue;
                 }
                 case 2: {
                     if (tag.Type != WireType.LENGTH) break;
                     var asset = Asset.Deserialize(ref reader);
-                    instance.RelatedAssets ??= [];
                     instance.RelatedAssets.Add(asset);
                     continue;
                 }
@@ -120,7 +117,11 @@ public sealed class GiaFile : GiFile
         return instance;
     }
 
-    public void WriteToFile(string path)
+    /// <summary>
+    /// 保存 GIA 文件到指定路径。
+    /// </summary>
+    /// <param name="path">文件路径</param>
+    public override void WriteToFile(string path)
     {
         int size = GetBufferSize();
         var writer = new BufferWriter(new byte[size]);
@@ -128,7 +129,7 @@ public sealed class GiaFile : GiFile
 
         if (hasAssets)
         {
-            for (int i = 0; i < Assets!.Count; i++)
+            for (int i = 0; i < Assets.Count; i++)
             {
                 if (szAssets[i] == 0) continue; // 跳过空对象
                 TagAssets.Serialize(ref writer);
@@ -139,7 +140,7 @@ public sealed class GiaFile : GiFile
 
         if (hasRelatedAssets)
         {
-            for (int i = 0; i < RelatedAssets!.Count; i++)
+            for (int i = 0; i < RelatedAssets.Count; i++)
             {
                 if (szRelatedAssets[i] == 0) continue; // 跳过空对象
                 TagRelatedAssets.Serialize(ref writer);
