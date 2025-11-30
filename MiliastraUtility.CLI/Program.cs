@@ -1,17 +1,15 @@
+using System.CommandLine;
+using MiliastraUtility.CLI.Commands;
+
 namespace MiliastraUtility.CLI;
 
-internal partial class Program
+internal static class Program
 {
-    static void Main(string[] args)
-    {
-        PrintUsage();
-    }
+    static readonly RootCommand RootCommand = new ("Miliastra Utility CLI");
 
-    static void PrintUsage()
+    static int Main(string[] args)
     {
-        string exeName = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
-        Console.WriteLine($"Usage:");
-        Console.WriteLine($"  {exeName} --help");
-        Console.WriteLine($"  {exeName} <command> [options]");
+        RootCommand.Subcommands.Add(ConvertCommand.Create());
+        return RootCommand.Parse(args).Invoke();
     }
 }
