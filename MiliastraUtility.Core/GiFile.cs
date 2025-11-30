@@ -82,28 +82,26 @@ public abstract class GiFile
     }
 
     /// <summary>
-    /// 在指定路径创建并写入 GI 文件元信息的公共方法。
+    /// 写入 GI 文件元信息的公共方法。
     /// </summary>
-    /// <remarks>继承类型在调用此方法前应负责确保导出路径合法，并提供一个空间足够的写入器，保留文件头部和尾部共 24 字节。</remarks>
+    /// <remarks>继承类型在调用此方法时应负责提供一个空间足够的写入器，保留文件头部和尾部共 24 字节。</remarks>
     /// <typeparam name="T">实例的类型，应为一个继承自 <see cref="GiFile"/> 的类型</typeparam>
-    /// <param name="path">文件路径</param>
     /// <param name="instance">>实例对象</param>
     /// <param name="writer">写入器</param>
     /// <exception cref="InvalidDataException"></exception>
-    protected static void WriteToFile<T>(string path, T instance, ref BufferWriter writer) where T : GiFile
+    protected static void WriteToFile<T>(T instance, ref BufferWriter writer) where T : GiFile
     {
         if (writer.Length < 24) throw new InvalidDataException("文件过小，无法保存数据。");
         uint length = (uint)writer.Length;
 
-        writer.Seek(0, SeekOrigin.Begin);
         writer.WriteUInt32BE(length - 4);          // 文件大小
         writer.WriteUInt32BE(instance.Version);    // 版本编号
         writer.WriteUInt32BE(HeadMagicNumber);     // 头部魔数
         writer.WriteUInt32BE((uint)instance.Type); // 文件类型
         writer.WriteUInt32BE(length - 24);         // 内容长度
-
+        int current = writer.Position;
         writer.Seek(-4, SeekOrigin.End);
         writer.WriteUInt32BE(TailMagicNumber);     // 尾部魔数
-        File.WriteAllBytes(path, writer.Span);
+        writer.Seek(current, SeekOrigin.Begin);
     }
 }
