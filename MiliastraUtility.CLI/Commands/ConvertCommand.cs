@@ -1,16 +1,22 @@
 using System.CommandLine;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Unicode;
 using MiliastraUtility.Core;
 
 namespace MiliastraUtility.CLI.Commands;
 
 public class ConvertCommand
 {
-    static readonly JsonSerializerOptions JsonSerializeOptions = new()
+    static readonly JsonSerializerOptions options = new()
     {
+        // 美化输出
         WriteIndented = true,
+        // 将属性名转为小驼峰
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        // 防止 Unicode 字符被转为 `\uXXXX`
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
         Converters =
         {
             new JsonStringEnumConverter<GiFileType>(JsonNamingPolicy.CamelCase),
@@ -38,7 +44,7 @@ public class ConvertCommand
             string ext = file.Extension.ToLower();
             if (!IsSupportedFileFormat(ext))
             {
-                result.AddError($"文件类型不受支持，必须为 .gia，但得到了：{ext}");
+                result.AddError($"文件类型不受支持，必须为 .json 或 .gia，但得到了：{ext}");
             }
         });
         command.Options.Add(inputOption);
@@ -69,6 +75,7 @@ public class ConvertCommand
     {
         return ext switch
         {
+            ".json" => true,
             ".gia" => true,
             _ => false,
         };
@@ -92,14 +99,50 @@ public class ConvertCommand
     static async Task ConvertGiaToJson(FileInfo file, DirectoryInfo dir)
     {
         var gia = GiaFile.ReadFromFile(file.FullName);
-        string json = JsonSerializer.Serialize(gia, JsonSerializeOptions);
+        string json = JsonSerializer.Serialize(gia, options);
         string path = string.Concat(dir.FullName, Path.GetFileNameWithoutExtension(file.Name), ".json");
         await File.WriteAllTextAsync(path, json);
     }
 
     static async Task ConvertJsonToGiFile(FileInfo file, DirectoryInfo dir)
     {
-        throw new NotImplementedException();
+        ReadOnlySpan<byte> data = await File.ReadAllBytesAsync(file.FullName);
+        var reader = new Utf8JsonReader(data);
+        var type = GiFileType.Unknown;
+        while (reader.Read())
+        {
+            // 只关心根属性的值
+            if (reader.CurrentDepth != 1) continue;
+            // 先获取文件类型，再决定解析分支
+            if (reader.TokenType == JsonTokenType.PropertyName &&
+                reader.GetString() == "type")
+            {
+                reader.Read();
+                type = reader.GetString() switch
+                {
+                    "gip" => GiFileType.Gip,
+                    "gil" => GiFileType.Gil,
+                    "gia" => GiFileType.Gia,
+                    "gir" => GiFileType.Gir,
+                    _ => GiFileType.Unknown
+                };
+                break;
+            }
+        }
+
+        switch (type)
+        {
+            case GiFileType.Gip: throw new NotSupportedException();
+            case GiFileType.Gil: throw new NotSupportedException();
+            case GiFileType.Gia:{
+                string path = string.Concat(dir.FullName, "\\", Path.GetFileNameWithoutExtension(file.Name), ".gia");
+                var gia = JsonSerializer.Deserialize<GiaFile>(data, options)!;
+                gia.WriteToFile(path);
+                break;
+            }
+            case GiFileType.Gir: throw new NotSupportedException();
+            default: throw new NotSupportedException();
+        }
     }
 
     static async Task NoEffect(FileInfo file, DirectoryInfo dir) { }
