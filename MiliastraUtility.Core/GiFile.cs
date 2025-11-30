@@ -104,4 +104,10 @@ public abstract class GiFile
         writer.WriteUInt32BE(TailMagicNumber);     // 尾部魔数
         writer.Seek(current, SeekOrigin.Begin);
     }
+
+    /// <summary>
+    /// 保存文件到指定路径。
+    /// </summary>
+    /// <param name="path">文件路径</param>
+    public abstract void WriteToFile(string path);
 }
