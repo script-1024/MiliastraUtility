@@ -1,7 +1,7 @@
-using MiliastraUtility.Core;
 using System.CommandLine;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MiliastraUtility.Core;
 
 namespace MiliastraUtility.CLI.Commands;
 
@@ -10,7 +10,12 @@ public class ConvertCommand
     static readonly JsonSerializerOptions JsonSerializeOptions = new()
     {
         WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters =
+        {
+            new JsonStringEnumConverter<GiFileType>(JsonNamingPolicy.CamelCase),
+            new JsonStringEnumConverter()
+        },
     };
 
     public static Command Create()
@@ -88,7 +93,8 @@ public class ConvertCommand
     {
         var gia = GiaFile.ReadFromFile(file.FullName);
         string json = JsonSerializer.Serialize(gia, JsonSerializeOptions);
-        await File.WriteAllTextAsync(Path.Combine(dir.FullName, file.Name, ".json"), json);
+        string path = string.Concat(dir.FullName, Path.GetFileNameWithoutExtension(file.Name), ".json");
+        await File.WriteAllTextAsync(path, json);
     }
 
     static async Task ConvertJsonToGiFile(FileInfo file, DirectoryInfo dir)
