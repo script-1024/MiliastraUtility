@@ -88,7 +88,7 @@ public abstract class GiFile
     /// <param name="instance">>实例对象</param>
     /// <param name="writer">写入器</param>
     /// <exception cref="InvalidDataException"></exception>
-    protected static void WriteToFile<T>(string path, T instance, BufferWriter writer) where T : GiFile
+    protected static void WriteToFile<T>(string path, T instance, ref BufferWriter writer) where T : GiFile
     {
         if (writer.Length < 24) throw new InvalidDataException("文件过小，无法保存数据。");
         uint length = (uint)writer.Length;

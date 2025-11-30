@@ -38,18 +38,18 @@ public sealed class GiaFile : GiFile
         int end = reader.Position + length;
         while (reader.Position < end) // 读取所有字段
         {
-            ProtoTag tag = Varint.FromBuffer(reader);
+            ProtoTag tag = Varint.Deserialize(ref reader);
             switch (tag.Id) // 根据标签 ID 解析字段，忽略未知标签
             {
                 case 1: {
                     if (tag.Type != WireType.LENGTH) break;
-                    var asset = Asset.FromBuffer(reader);
+                    var asset = Asset.Deserialize(ref reader);
                     instance.Assets.Add(asset);
                     continue;
                 }
                 case 2: {
                     if (tag.Type != WireType.LENGTH) break;
-                    var asset = Asset.FromBuffer(reader);
+                    var asset = Asset.Deserialize(ref reader);
                     instance.RelatedAssets.Add(asset);
                     continue;
                 }
@@ -60,8 +60,9 @@ public sealed class GiaFile : GiFile
                 default: break; // 忽略未知字段
             }
             // 消耗一个未知标签
-            tag.Consume(reader);
+            tag.Consume(ref reader);
         }
+
         return instance;
     }
 }

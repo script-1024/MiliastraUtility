@@ -10,20 +10,23 @@ namespace MiliastraUtility.Core.Serialization;
 /// <param name="buffer">缓冲区</param>
 public ref struct BufferWriter(Span<byte> buffer)
 {
+    private readonly Span<byte> buffer = buffer;
+    private int pos = 0;
+
     /// <summary>
     /// 获取用于写入数据的缓冲区。
     /// </summary>
-    public readonly Span<byte> Span { get; } = buffer;
+    public readonly Span<byte> Span => buffer;
 
     /// <summary>
     /// 获取缓冲区的长度。
     /// </summary>
-    public readonly int Length => Span.Length;
+    public readonly int Length => buffer.Length;
 
     /// <summary>
     /// 获取当前写入位置的索引。
     /// </summary>
-    public int Position { get; private set; } = 0;
+    public readonly int Position => pos;
 
     /// <summary>
     /// 确保缓冲区还有足够多的空间可供写入。
@@ -33,7 +36,7 @@ public ref struct BufferWriter(Span<byte> buffer)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private readonly void EnsureAvailable(int size)
     {
-        if (Position + size > Length) throw new EndOfStreamException();
+        if (pos + size > buffer.Length) throw new EndOfStreamException();
     }
 
     /// <summary>
@@ -47,13 +50,14 @@ public ref struct BufferWriter(Span<byte> buffer)
         int newPos = origin switch
         {
             SeekOrigin.Begin => offset,
-            SeekOrigin.Current => Position + offset,
-            SeekOrigin.End => Length + offset,
-            _ => Position
+            SeekOrigin.Current => pos + offset,
+            SeekOrigin.End => buffer.Length + offset,
+            _ => pos
         };
 
-        if (newPos < 0 || newPos > Length) throw new ArgumentOutOfRangeException(nameof(offset), "新的位置超出缓冲区范围");
-        Position = newPos;
+        if (newPos < 0 || newPos > buffer.Length)
+            throw new ArgumentOutOfRangeException(nameof(offset), "新的位置超出缓冲区范围");
+        pos = newPos;
     }
 
     /// <summary>
@@ -63,7 +67,7 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteByte(byte value)
     {
         EnsureAvailable(sizeof(byte));
-        Span[Position++] = value;
+        buffer[pos++] = value;
     }
 
     /// <summary>
@@ -73,8 +77,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteSpan(Span<byte> source)
     {
         EnsureAvailable(source.Length);
-        source.CopyTo(Span[Position..]);
-        Position += source.Length;
+        source.CopyTo(buffer[pos..]);
+        pos += source.Length;
     }
 
     /// <summary>
@@ -84,8 +88,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteInt32LE(int value)
     {
         EnsureAvailable(sizeof(int));
-        BinaryPrimitives.WriteInt32LittleEndian(Span[Position..], value);
-        Position += sizeof(int);
+        BinaryPrimitives.WriteInt32LittleEndian(buffer[pos..], value);
+        pos += sizeof(int);
     }
 
     /// <summary>
@@ -95,8 +99,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteInt32BE(int value)
     {
         EnsureAvailable(sizeof(int));
-        BinaryPrimitives.WriteInt32BigEndian(Span[Position..], value);
-        Position += sizeof(int);
+        BinaryPrimitives.WriteInt32BigEndian(buffer[pos..], value);
+        pos += sizeof(int);
     }
 
     /// <summary>
@@ -106,8 +110,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteUInt32LE(uint value)
     {
         EnsureAvailable(sizeof(uint));
-        BinaryPrimitives.WriteUInt32LittleEndian(Span[Position..], value);
-        Position += sizeof(uint);
+        BinaryPrimitives.WriteUInt32LittleEndian(buffer[pos..], value);
+        pos += sizeof(uint);
     }
 
     /// <summary>
@@ -117,8 +121,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteUInt32BE(uint value)
     {
         EnsureAvailable(sizeof(uint));
-        BinaryPrimitives.WriteUInt32BigEndian(Span[Position..], value);
-        Position += sizeof(uint);
+        BinaryPrimitives.WriteUInt32BigEndian(buffer[pos..], value);
+        pos += sizeof(uint);
     }
 
     /// <summary>
@@ -128,8 +132,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteInt64LE(long value)
     {
         EnsureAvailable(sizeof(long));
-        BinaryPrimitives.WriteInt64LittleEndian(Span[Position..], value);
-        Position += sizeof(long);
+        BinaryPrimitives.WriteInt64LittleEndian(buffer[pos..], value);
+        pos += sizeof(long);
     }
 
     /// <summary>
@@ -139,8 +143,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteInt64BE(long value)
     {
         EnsureAvailable(sizeof(long));
-        BinaryPrimitives.WriteInt64BigEndian(Span[Position..], value);
-        Position += sizeof(long);
+        BinaryPrimitives.WriteInt64BigEndian(buffer[pos..], value);
+        pos += sizeof(long);
     }
 
     /// <summary>
@@ -150,8 +154,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteUInt64LE(ulong value)
     {
         EnsureAvailable(sizeof(ulong));
-        BinaryPrimitives.WriteUInt64LittleEndian(Span[Position..], value);
-        Position += sizeof(ulong);
+        BinaryPrimitives.WriteUInt64LittleEndian(buffer[pos..], value);
+        pos += sizeof(ulong);
     }
 
     /// <summary>
@@ -161,8 +165,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteUInt64BE(ulong value)
     {
         EnsureAvailable(sizeof(ulong));
-        BinaryPrimitives.WriteUInt64BigEndian(Span[Position..], value);
-        Position += sizeof(ulong);
+        BinaryPrimitives.WriteUInt64BigEndian(buffer[pos..], value);
+        pos += sizeof(ulong);
     }
 
     /// <summary>
@@ -172,8 +176,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteFloat(float value)
     {
         EnsureAvailable(sizeof(float));
-        BinaryPrimitives.WriteSingleLittleEndian(Span[Position..], value);
-        Position += sizeof(float);
+        BinaryPrimitives.WriteSingleLittleEndian(buffer[pos..], value);
+        pos += sizeof(float);
     }
 
     /// <summary>
@@ -183,8 +187,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteDouble(double value)
     {
         EnsureAvailable(sizeof(double));
-        BinaryPrimitives.WriteDoubleLittleEndian(Span[Position..], value);
-        Position += sizeof(double);
+        BinaryPrimitives.WriteDoubleLittleEndian(buffer[pos..], value);
+        pos += sizeof(double);
     }
 
     /// <summary>
@@ -194,10 +198,10 @@ public ref struct BufferWriter(Span<byte> buffer)
     public void WriteString(string value)
     {
         Integer length = Encoding.UTF8.GetByteCount(value);
-        Varint.FromUInt32(length).Serialize(this);
+        Varint.FromUInt32(length).Serialize(ref this);
         EnsureAvailable(length);
-        Encoding.UTF8.GetBytes(value, Span[Position..]);
-        Position += length;
+        Encoding.UTF8.GetBytes(value, buffer[pos..]);
+        pos += length;
     }
 
     /// <summary>
@@ -209,8 +213,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     {
         if (length == 0) return;
         EnsureAvailable(length);
-        if (length != Encoding.UTF8.GetBytes(value, Span[Position..]))
+        if (length != Encoding.UTF8.GetBytes(value, buffer[pos..]))
             throw new ArgumentException("提供的长度与实际编码长度不符", nameof(length));
-        Position += length;
+        pos += length;
     }
 }

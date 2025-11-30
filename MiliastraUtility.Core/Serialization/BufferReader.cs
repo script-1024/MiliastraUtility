@@ -10,20 +10,23 @@ namespace MiliastraUtility.Core.Serialization;
 /// <param name="buffer">只读缓冲区</param>
 public ref struct BufferReader(ReadOnlySpan<byte> buffer)
 {
+    private readonly ReadOnlySpan<byte> buffer = buffer;
+    private int pos = 0;
+
     /// <summary>
     /// 获取用于读取数据的只读缓冲区。
     /// </summary>
-    public readonly ReadOnlySpan<byte> Span { get; } = buffer;
+    public readonly ReadOnlySpan<byte> Span => buffer;
 
     /// <summary>
     /// 获取缓冲区的长度。
     /// </summary>
-    public readonly int Length => Span.Length;
+    public readonly int Length => buffer.Length;
 
     /// <summary>
     /// 获取当前读取位置的索引。
     /// </summary>
-    public int Position { get; private set; } = 0;
+    public readonly int Position => pos;
 
     /// <summary>
     /// 确保缓冲区还有足够多的数据可供读取。
@@ -33,7 +36,7 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private readonly void EnsureAvailable(int size)
     {
-        if (Position + size > Length) throw new EndOfStreamException();
+        if (pos + size > buffer.Length) throw new EndOfStreamException();
     }
 
     /// <summary>
@@ -47,13 +50,14 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
         int newPos = origin switch
         {
             SeekOrigin.Begin => offset,
-            SeekOrigin.Current => Position + offset,
-            SeekOrigin.End => Length + offset,
-            _ => Position
+            SeekOrigin.Current => pos + offset,
+            SeekOrigin.End => buffer.Length + offset,
+            _ => pos
         };
 
-        if (newPos < 0 || newPos > Length) throw new ArgumentOutOfRangeException(nameof(offset), "新的位置超出缓冲区范围");
-        Position = newPos;
+        if (newPos < 0 || newPos > buffer.Length)
+            throw new ArgumentOutOfRangeException(nameof(offset), "新的位置超出缓冲区范围");
+        pos = newPos;
     }
 
     /// <summary>
@@ -63,7 +67,7 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public byte ReadByte()
     {
         EnsureAvailable(sizeof(byte));
-        return Span[Position++];
+        return buffer[pos++];
     }
 
     /// <summary>
@@ -74,8 +78,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public ReadOnlySpan<byte> ReadSpan(int length)
     {
         EnsureAvailable(length);
-        var value = Span.Slice(Position, length);
-        Position += length;
+        var value = buffer.Slice(pos, length);
+        pos += length;
         return value;
     }
 
@@ -86,8 +90,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public int ReadInt32LE()
     {
         EnsureAvailable(sizeof(int));
-        int value = BinaryPrimitives.ReadInt32LittleEndian(Span[Position..]);
-        Position += sizeof(int);
+        int value = BinaryPrimitives.ReadInt32LittleEndian(buffer[pos..]);
+        pos += sizeof(int);
         return value;
     }
 
@@ -98,8 +102,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public int ReadInt32BE()
     {
         EnsureAvailable(sizeof(int));
-        int value = BinaryPrimitives.ReadInt32BigEndian(Span[Position..]);
-        Position += sizeof(int);
+        int value = BinaryPrimitives.ReadInt32BigEndian(buffer[pos..]);
+        pos += sizeof(int);
         return value;
     }
 
@@ -110,8 +114,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public uint ReadUInt32LE()
     {
         EnsureAvailable(sizeof(uint));
-        uint value = BinaryPrimitives.ReadUInt32LittleEndian(Span[Position..]);
-        Position += sizeof(uint);
+        uint value = BinaryPrimitives.ReadUInt32LittleEndian(buffer[pos..]);
+        pos += sizeof(uint);
         return value;
     }
 
@@ -122,8 +126,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public uint ReadUInt32BE()
     {
         EnsureAvailable(sizeof(uint));
-        uint value = BinaryPrimitives.ReadUInt32BigEndian(Span[Position..]);
-        Position += sizeof(uint);
+        uint value = BinaryPrimitives.ReadUInt32BigEndian(buffer[pos..]);
+        pos += sizeof(uint);
         return value;
     }
 
@@ -134,8 +138,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public long ReadInt64LE()
     {
         EnsureAvailable(sizeof(long));
-        long value = BinaryPrimitives.ReadInt64LittleEndian(Span[Position..]);
-        Position += sizeof(long);
+        long value = BinaryPrimitives.ReadInt64LittleEndian(buffer[pos..]);
+        pos += sizeof(long);
         return value;
     }
 
@@ -146,8 +150,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public long ReadInt64BE()
     {
         EnsureAvailable(sizeof(long));
-        long value = BinaryPrimitives.ReadInt64BigEndian(Span[Position..]);
-        Position += sizeof(long);
+        long value = BinaryPrimitives.ReadInt64BigEndian(buffer[pos..]);
+        pos += sizeof(long);
         return value;
     }
 
@@ -158,8 +162,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public ulong ReadUInt64LE()
     {
         EnsureAvailable(sizeof(ulong));
-        ulong value = BinaryPrimitives.ReadUInt64LittleEndian(Span[Position..]);
-        Position += sizeof(ulong);
+        ulong value = BinaryPrimitives.ReadUInt64LittleEndian(buffer[pos..]);
+        pos += sizeof(ulong);
         return value;
     }
 
@@ -170,8 +174,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public ulong ReadUInt64BE()
     {
         EnsureAvailable(sizeof(ulong));
-        ulong value = BinaryPrimitives.ReadUInt64BigEndian(Span[Position..]);
-        Position += sizeof(ulong);
+        ulong value = BinaryPrimitives.ReadUInt64BigEndian(buffer[pos..]);
+        pos += sizeof(ulong);
         return value;
     }
 
@@ -182,8 +186,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public float ReadFloat()
     {
         EnsureAvailable(sizeof(float));
-        float value = BinaryPrimitives.ReadSingleLittleEndian(Span[Position..]);
-        Position += sizeof(float);
+        float value = BinaryPrimitives.ReadSingleLittleEndian(buffer[pos..]);
+        pos += sizeof(float);
         return value;
     }
 
@@ -194,8 +198,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     public double ReadDouble()
     {
         EnsureAvailable(sizeof(double));
-        double value = BinaryPrimitives.ReadDoubleLittleEndian(Span[Position..]);
-        Position += sizeof(double);
+        double value = BinaryPrimitives.ReadDoubleLittleEndian(buffer[pos..]);
+        pos += sizeof(double);
         return value;
     }
 
@@ -205,11 +209,11 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     /// <exception cref="EndOfStreamException"></exception>
     public string ReadString()
     {
-        int length = Varint.FromBuffer(this).GetValue();
+        int length = Varint.Deserialize(ref this).GetValue();
         if (length == 0) return string.Empty;
         EnsureAvailable(length);
-        string value = Encoding.UTF8.GetString(Span.Slice(Position, length));
-        Position += length;
+        string value = Encoding.UTF8.GetString(buffer.Slice(pos, length));
+        pos += length;
         return value;
     }
 
@@ -221,8 +225,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     {
         if (length == 0) return string.Empty;
         EnsureAvailable(length);
-        string value = Encoding.UTF8.GetString(Span.Slice(Position, length));
-        Position += length;
+        string value = Encoding.UTF8.GetString(buffer.Slice(pos, length));
+        pos += length;
         return value;
     }
 }

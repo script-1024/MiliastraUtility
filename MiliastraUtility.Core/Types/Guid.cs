@@ -21,9 +21,12 @@ public struct Guid(uint value) : ISerializable, IDeserializable<Guid>
 
     public readonly int GetBufferSize() => Varint.GetBufferSize(Value);
 
-    public readonly void Serialize(BufferWriter writer) => Varint.FromUInt32(Value).Serialize(writer);
+    public readonly void Serialize(ref BufferWriter writer)
+        => Varint.FromUInt32(Value).Serialize(ref writer);
 
-    public void Deserialize(BufferReader reader) => Value = Varint.FromBuffer(reader).GetValue();
+    public static Guid Deserialize(ref BufferReader reader)
+        => Deserialize(ref reader, default);
 
-    public static Guid FromBuffer(BufferReader reader) => Varint.FromBuffer(reader).GetValue();
+    public static Guid Deserialize(ref BufferReader reader, Guid self)
+        => Varint.Deserialize(ref reader).GetValue();
 }
