@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using MiliastraUtility.Core.Serialization;
 
 namespace MiliastraUtility.Core.Types;
@@ -9,22 +10,27 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
         => Varint.FromUInt32(szContent).GetBufferSize();
 
     // 1: 资产的元信息
+    [JsonPropertyOrder(1)]
     public AssetInfo Info { get; set; }
     private static readonly ProtoTag TagInfo = new(1, WireType.LENGTH);
     private Integer szInfo = 0;
 
     // 2: 相关资产的元信息列表
-    public List<AssetInfo> RelatedInfo { get; set; } = [];
+    [JsonPropertyOrder(2)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<AssetInfo>? RelatedInfo { get; set; }
     private static readonly ProtoTag TagRelatedInfo = new(2, WireType.LENGTH);
     private Integer[] szRelated = [];
     private bool hasRelated = false;
 
     // 3: 资产名称
+    [JsonPropertyOrder(3)]
     public string Name { get; set; } = string.Empty;
     private static readonly ProtoTag TagName = new(3, WireType.LENGTH);
     private Integer szName = 0;
 
     // 5: 资产类型
+    [JsonPropertyOrder(5)]
     public AssetType Type { get; set; }
     private static readonly ProtoTag TagType = new(5, WireType.VARINT);
 
@@ -41,13 +47,16 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
         if (szInfo != 0) size += 1 + GetSizeOfLengthVarint(szInfo) + szInfo;
 
         hasRelated = false;
-        if (RelatedInfo.Count > 0) szRelated = new Integer[RelatedInfo.Count];
-        for (int i = 0; i < RelatedInfo.Count; i++)
+        if (RelatedInfo?.Count > 0)
         {
-            szRelated[i] = RelatedInfo[i].GetBufferSize();
-            if (szRelated[i] == 0) continue; // 跳过空对象
-            size += 1 + GetSizeOfLengthVarint(szRelated[i]) + szRelated[i];
-            hasRelated = true;
+            szRelated = new Integer[RelatedInfo.Count];
+            for (int i = 0; i < RelatedInfo.Count; i++)
+            {
+                szRelated[i] = RelatedInfo[i].GetBufferSize();
+                if (szRelated[i] == 0) continue; // 跳过空对象
+                size += 1 + GetSizeOfLengthVarint(szRelated[i]) + szRelated[i];
+                hasRelated = true;
+            }
         }
 
         szName = Encoding.UTF8.GetByteCount(Name);
@@ -60,78 +69,79 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
     /// <summary>
     /// 将此对象序列化到指定的缓冲区写入器中。
     /// </summary>
-    /// <remarks>呼叫此方法前必须先调用 <see cref="GetBufferSize"/> 以确保缓冲区有足够的空间。</remarks>
-    public void Serialize(BufferWriter writer)
+    /// <remarks>
+    /// 呼叫此方法前必须先调用 <see cref="GetBufferSize"/> 以确保缓冲区有足够的空间。
+    /// </remarks>
+    public void Serialize(ref BufferWriter writer)
     {
         if (szInfo != 0)
         {
-            TagInfo.Serialize(writer);
-            Varint.FromUInt32(szInfo).Serialize(writer);
-            Info.Serialize(writer);
+            TagInfo.Serialize(ref writer);
+            Varint.FromUInt32(szInfo).Serialize(ref writer);
+            Info.Serialize(ref writer);
         }
 
         if (hasRelated)
         {
-            for (int i = 0; i < RelatedInfo.Count; i++)
+            for (int i = 0; i < RelatedInfo!.Count; i++)
             {
                 if (szRelated[i] == 0) continue; // 跳过空对象
-                TagRelatedInfo.Serialize(writer);
-                Varint.FromUInt32(szRelated[i]).Serialize(writer);
-                RelatedInfo[i].Serialize(writer);
+                TagRelatedInfo.Serialize(ref writer);
+                Varint.FromUInt32(szRelated[i]).Serialize(ref writer);
+                RelatedInfo[i].Serialize(ref writer);
             }
         }
 
         if (szName != 0)
         {
-            TagName.Serialize(writer);
-            Varint.FromUInt32(szName).Serialize(writer);
+            TagName.Serialize(ref writer);
+            Varint.FromUInt32(szName).Serialize(ref writer);
             writer.WriteString(Name, szName); // 已经计算过长度了，不用再计算一次
         }
 
         if (Type != AssetType.Unknown)
         {
-            TagType.Serialize(writer);
+            TagType.Serialize(ref writer);
             writer.WriteByte((byte)Type);
         }
     }
 
-    public void Deserialize(BufferReader reader)
+    public static Asset Deserialize(ref BufferReader reader)
+        => Deserialize(ref reader, new());
+
+    public static Asset Deserialize(ref BufferReader reader, Asset self)
     {
-        int length = Varint.FromBuffer(reader).GetValue();
+        int length = Varint.Deserialize(ref reader).GetValue();
         int end = reader.Position + length;
 
         while (reader.Position < end)
         {
-            ProtoTag tag = Varint.FromBuffer(reader);
+            ProtoTag tag = Varint.Deserialize(ref reader);
             switch (tag.Id)
             {
                 case 1:
                     if (tag.Type != WireType.LENGTH) break;
-                    Info.Deserialize(reader);
+                    self.Info = AssetInfo.Deserialize(ref reader, self.Info);
                     continue;
                 case 2:
                     if (tag.Type != WireType.LENGTH) break;
-                    var info = AssetInfo.FromBuffer(reader);
-                    RelatedInfo.Add(info);
+                    var info = AssetInfo.Deserialize(ref reader);
+                    self.RelatedInfo ??= [];
+                    self.RelatedInfo.Add(info);
                     continue;
                 case 3:
                     if (tag.Type != WireType.LENGTH) break;
-                    Name = reader.ReadString();
+                    self.Name = reader.ReadString();
                     continue;
                 case 5:
                     if (tag.Type != WireType.VARINT) break;
-                    Type = Varint.AsEnum(reader, AssetType.Unknown);
+                    self.Type = Varint.AsEnum(ref reader, AssetType.Unknown);
                     continue;
                 default: break;
             }
-            tag.Consume(reader);
+            tag.Consume(ref reader);
         }
-    }
-    
-    public static Asset FromBuffer(BufferReader reader)
-    {
-        var asset = new Asset();
-        asset.Deserialize(reader);
-        return asset;
+
+        return self;
     }
 }

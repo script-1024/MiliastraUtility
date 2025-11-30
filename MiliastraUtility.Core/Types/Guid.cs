@@ -1,7 +1,10 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using MiliastraUtility.Core.Serialization;
 
 namespace MiliastraUtility.Core.Types;
 
+[JsonConverter(typeof(GuidJsonConverter))]
 public struct Guid(uint value) : ISerializable, IDeserializable<Guid>
 {
     private static uint Assigned = 0x40000000; // 原神似乎是从 1073741824 开始分配 GUID 的
@@ -21,9 +24,21 @@ public struct Guid(uint value) : ISerializable, IDeserializable<Guid>
 
     public readonly int GetBufferSize() => Varint.GetBufferSize(Value);
 
-    public readonly void Serialize(BufferWriter writer) => Varint.FromUInt32(Value).Serialize(writer);
+    public readonly void Serialize(ref BufferWriter writer)
+        => Varint.FromUInt32(Value).Serialize(ref writer);
 
-    public void Deserialize(BufferReader reader) => Value = Varint.FromBuffer(reader).GetValue();
+    public static Guid Deserialize(ref BufferReader reader)
+        => Deserialize(ref reader, default);
 
-    public static Guid FromBuffer(BufferReader reader) => Varint.FromBuffer(reader).GetValue();
+    public static Guid Deserialize(ref BufferReader reader, Guid self)
+        => Varint.Deserialize(ref reader).GetValue();
+}
+
+internal sealed class GuidJsonConverter : JsonConverter<Guid>
+{
+    public override Guid Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => reader.GetUInt32();
+
+    public override void Write(Utf8JsonWriter writer, Guid value, JsonSerializerOptions options)
+        => writer.WriteNumberValue(value.Value);
 }

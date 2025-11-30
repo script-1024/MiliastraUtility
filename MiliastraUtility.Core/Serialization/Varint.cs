@@ -90,25 +90,36 @@ public ref struct Varint : ISerializable, IDeserializable<Varint>
         return (bits + 6) / 7;
     }
 
-    public void Serialize(BufferWriter writer) => writer.WriteSpan(GetSpan());
+    public void Serialize(ref BufferWriter writer) => writer.WriteSpan(GetSpan());
 
-    public void Deserialize(BufferReader reader)
+    public static Varint Deserialize(ref BufferReader reader)
+        => Deserialize(ref reader, default);
+
+    public static Varint Deserialize(ref BufferReader reader, Varint self)
     {
-        Size = 0;
-        while (Size < 10)
+        self.Size = 0;
+        while (self.Size < 10)
         {
             byte data = reader.ReadByte();
-            Buffer[Size++] = data;
-            if ((data & 0x80) == 0) return;
+            self.Buffer[self.Size++] = data;
+            if ((data & 0x80) == 0) return self;
         }
         throw new InvalidDataException("无效的 Varint 编码");
     }
 
-    public static Varint FromBuffer(BufferReader reader)
+    /// <summary>
+    /// 消耗一个 Varint 但不获取其值
+    /// </summary>
+    /// <param name="reader">读取器</param>
+    /// <exception cref="InvalidDataException"></exception>
+    public static void Consume(ref BufferReader reader)
     {
-        var v = new Varint();
-        v.Deserialize(reader);
-        return v;
+        for (int i = 0; i < 10; i++)
+        {
+            byte data = reader.ReadByte();
+            if ((data & 0x80) == 0) return;
+        }
+        throw new InvalidDataException("无效的 Varint 编码");
     }
 
     /// <summary>
@@ -131,9 +142,9 @@ public ref struct Varint : ISerializable, IDeserializable<Varint>
     /// <typeparam name="TEnum">枚举类型</typeparam>
     /// <param name="reader">读取器</param>
     /// <param name="fallback">失败值</param>
-    public static TEnum AsEnum<TEnum>(BufferReader reader, TEnum fallback) where TEnum : struct, Enum
+    public static TEnum AsEnum<TEnum>(ref BufferReader reader, TEnum fallback) where TEnum : struct, Enum
     {
-        var v = FromBuffer(reader);
+        var v = Deserialize(ref reader);
         return v.AsEnum(fallback);
     }
 }

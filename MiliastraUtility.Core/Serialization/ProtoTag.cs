@@ -44,18 +44,18 @@ public readonly struct ProtoTag : ISerializable
     /// <summary>
     /// 消耗一个无效或未知的标签
     /// </summary>
-    public void Consume(BufferReader reader)
+    public void Consume(ref BufferReader reader)
     {
         switch (Type)
         {
             case WireType.VARINT:
-                _ = Varint.FromBuffer(reader);
+                Varint.Consume(ref reader);
                 break;
             case WireType.FIXED64:
                 reader.Seek(8, SeekOrigin.Current);
                 break;
             case WireType.LENGTH:
-                int length = Varint.FromBuffer(reader).GetValue();
+                int length = Varint.Deserialize(ref reader).GetValue();
                 reader.Seek(length, SeekOrigin.Current);
                 break;
             case WireType.FIXED32:
@@ -67,5 +67,5 @@ public readonly struct ProtoTag : ISerializable
 
     public int GetBufferSize() => Varint.GetBufferSize(Value);
 
-    public void Serialize(BufferWriter writer) => Varint.FromUInt32(Value).Serialize(writer);
+    public void Serialize(ref BufferWriter writer) => Varint.FromUInt32(Value).Serialize(ref writer);
 }

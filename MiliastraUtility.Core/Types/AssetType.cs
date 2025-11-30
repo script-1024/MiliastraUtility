@@ -3,7 +3,7 @@ namespace MiliastraUtility.Core.Types;
 /// <summary>
 /// 表示资产的具体类型。
 /// </summary>
-public enum AssetType : byte
+public enum AssetType
 {
     /// <summary>
     /// 未知类型

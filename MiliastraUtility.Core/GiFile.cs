@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MiliastraUtility.Core.Serialization;
 
 namespace MiliastraUtility.Core;
@@ -9,6 +10,7 @@ public abstract class GiFile
     /// <summary>
     /// 获取文件格式的版本号。
     /// </summary>
+    [JsonPropertyOrder(-1)]
     public uint Version { get; protected set; } = 1;
 
     /// <summary>
@@ -88,7 +90,7 @@ public abstract class GiFile
     /// <param name="instance">>实例对象</param>
     /// <param name="writer">写入器</param>
     /// <exception cref="InvalidDataException"></exception>
-    protected static void WriteToFile<T>(string path, T instance, BufferWriter writer) where T : GiFile
+    protected static void WriteToFile<T>(string path, T instance, ref BufferWriter writer) where T : GiFile
     {
         if (writer.Length < 24) throw new InvalidDataException("文件过小，无法保存数据。");
         uint length = (uint)writer.Length;
