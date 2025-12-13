@@ -78,7 +78,7 @@ public enum AssetType
     /// <summary>
     /// 交互控件
     /// </summary>
-    UIControl = 15,
+    UiControl = 15,
 
     /// <summary>
     /// 技能资源
@@ -103,7 +103,7 @@ public enum AssetType
     /// <summary>
     /// 界面控件组
     /// </summary>
-    UIControlGroup = 21,
+    UiControlGroup = 21,
 
     /// <summary>
     /// 状态节点图
@@ -114,6 +114,11 @@ public enum AssetType
     /// 职业节点图
     /// </summary>
     ClassNodeGraph = 23,
+
+    /// <summary>
+    /// 全局计时器
+    /// </summary>
+    GlobalTimer = 24,
 
     /// <summary>
     /// 道具
@@ -128,7 +133,37 @@ public enum AssetType
     /// <summary>
     /// 结构体定义
     /// </summary>
-    StructureDefinition = 29,
+    Structure = 29,
+
+    /// <summary>
+    /// 商店
+    /// </summary>
+    Shop = 30,
+
+    /// <summary>
+    /// 路径
+    /// </summary>
+    Path = 38,
+
+    /// <summary>
+    /// 护盾
+    /// </summary>
+    Shield = 39,
+
+    /// <summary>
+    /// 实体布设组
+    /// </summary>
+    EntityDeploymentGroup = 43,
+
+    /// <summary>
+    /// 单位标签
+    /// </summary>
+    UnitTag = 44,
+
+    /// <summary>
+    /// 扫描标签
+    /// </summary>
+    ScanTag = 45,
 
     /// <summary>
     /// 道具节点图
@@ -139,6 +174,11 @@ public enum AssetType
     /// 整数过滤器
     /// </summary>
     IntegerFilter = 47,
+
+    /// <summary>
+    /// 光源
+    /// </summary>
+    LightSource = 48,
 
     /// <summary>
     /// 环境配置

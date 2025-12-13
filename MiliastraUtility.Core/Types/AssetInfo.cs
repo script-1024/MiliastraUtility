@@ -33,6 +33,11 @@ public enum AssetSpecialType
     Composite = 23,
 
     /// <summary>
+    /// 全局计时器
+    /// </summary>
+    GlobalTimer = 24,
+
+    /// <summary>
     /// 镜头配置
     /// </summary>
     Camera = 25,
@@ -43,15 +48,18 @@ public enum AssetSpecialType
 /// </summary>
 public enum AssetCategory
 {
-    Special       = 0,
-    Prefab        = 1,
-    Entity        = 2,
+    Special = 0,
+    Prefab = 1,
+    Entity = 2,
     Configuration = 3,
-    Terrain       = 5,
-    UI            = 8,
-    PresetPoint   = 9,
-    Decoration    = 14,
-    Structure     = 15,
+    Terrain = 5,
+    Ui = 8,
+    PresetPoint = 9,
+    Decoration = 14,
+    Structure = 15,
+    EntityDeploymentGroup = 18,
+    Path = 19,
+    UnitTag = 23,
 }
 
 /// <summary>
