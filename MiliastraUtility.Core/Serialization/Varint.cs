@@ -7,7 +7,7 @@ namespace MiliastraUtility.Core.Serialization;
 [InlineArray(10)] // 将 64 位整数编码为 Varint 时最多需要 10 个字节
 internal struct VarintBuffer { private byte first; }
 
-public ref struct Varint : ISerializable, IDeserializable<Varint>
+public struct Varint : ISerializable, IDeserializable<Varint>
 {
     private int Size;
     private bool IsZigZagged;
@@ -62,7 +62,28 @@ public ref struct Varint : ISerializable, IDeserializable<Varint>
         return v;
     }
 
-    public readonly Integer GetValue()
+    public readonly T GetValue<T>() where T : unmanaged
+        => (T)GetValue(typeof(T));
+
+    public readonly object GetValue(Type targetType)
+    {
+        ulong result = GetValue();
+        return targetType switch
+        {
+            var t when t == typeof(ulong)  => result,
+            var t when t == typeof(long)   => (long)result,
+            var t when t == typeof(uint)   => (uint)result,
+            var t when t == typeof(int)    => (int)result,
+            var t when t == typeof(ushort) => (ushort)result,
+            var t when t == typeof(short)  => (short)result,
+            var t when t == typeof(byte)   => (byte)result,
+            var t when t == typeof(sbyte)  => (sbyte)result,
+            var t when t == typeof(bool)   => result != 0,
+            _ => throw new NotSupportedException()
+        };
+    }
+
+    public readonly ulong GetValue()
     {
         ulong result = 0;
         for (int i = 0; i < Size; i++)
@@ -91,6 +112,9 @@ public ref struct Varint : ISerializable, IDeserializable<Varint>
     }
 
     public void Serialize(ref BufferWriter writer) => writer.WriteSpan(GetSpan());
+
+    public static T Deserialize<T>(ref BufferReader reader) where T : unmanaged
+        => Deserialize(ref reader, default).GetValue<T>();
 
     public static Varint Deserialize(ref BufferReader reader)
         => Deserialize(ref reader, default);
@@ -130,9 +154,9 @@ public ref struct Varint : ISerializable, IDeserializable<Varint>
     /// <param name="fallback">失败值</param>
     public readonly TEnum AsEnum<TEnum>(TEnum fallback) where TEnum : struct, Enum
     {
-        int value = GetValue();
-        return Enum.IsDefined(typeof(TEnum), value)
-            ? (TEnum)Enum.ToObject(typeof(TEnum), value) : fallback;
+        var type = typeof(TEnum);
+        var value = GetValue(Enum.GetUnderlyingType(type));
+        return Enum.IsDefined(type, value) ? (TEnum)Enum.ToObject(type, value) : fallback;
     }
 
     /// <summary>
