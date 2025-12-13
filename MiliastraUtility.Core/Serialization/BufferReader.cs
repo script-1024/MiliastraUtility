@@ -27,6 +27,17 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     /// 获取当前读取位置的索引。
     /// </summary>
     public readonly int Position => pos;
+    
+    /// <summary>
+     /// 检查是否仍有数据可供读取。
+     /// </summary>
+    public readonly bool Available() => Available(1);
+
+    /// <summary>
+    /// 检查是否仍有足够长的数据可供读取。
+    /// </summary>
+    /// <param name="size">要求的字节数</param>
+    public readonly bool Available(int size) => pos + size <= buffer.Length;
 
     /// <summary>
     /// 确保缓冲区还有足够多的数据可供读取。
@@ -36,7 +47,8 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private readonly void EnsureAvailable(int size)
     {
-        if (pos + size > buffer.Length) throw new EndOfStreamException();
+        if (!Available(size))
+            throw new EndOfStreamException();
     }
 
     /// <summary>
