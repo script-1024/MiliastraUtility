@@ -62,6 +62,14 @@ public struct Varint : ISerializable, IDeserializable<Varint>
         return v;
     }
 
+    public static Varint FromInt32(int value)
+        => value < 0 ? throw new ArgumentOutOfRangeException(nameof(value), "不接受负值")
+                     : FromUInt32((uint)value);
+
+    public static Varint FromInt64(long value)
+        => value < 0 ? throw new ArgumentOutOfRangeException(nameof(value), "不接受负值")
+                     : FromUInt64((ulong)value);
+
     public readonly T GetValue<T>() where T : unmanaged
         => (T)GetValue(typeof(T));
 

@@ -18,15 +18,15 @@ public enum WireType : byte
 /// </summary>
 public readonly struct ProtoTag : ISerializable
 {
-    public uint Id { get; init; }
+    public int Id { get; init; }
     public WireType Type { get; init; }
-    public uint Value => (Id << 3) | (byte)Type;
+    public uint Value => (uint)(Id << 3) | (byte)Type;
 
-    public ProtoTag(uint id, WireType type) { Id = id; Type = type; }
+    public ProtoTag(int id, WireType type) { Id = id; Type = type; }
 
     public ProtoTag(uint value)
     {
-        Id = value >> 3;
+        Id = (int)(value >> 3);
         Type = (value & 0b111) switch
         {
             0 => WireType.VARINT,
@@ -38,7 +38,7 @@ public readonly struct ProtoTag : ISerializable
     }
 
     public static implicit operator ProtoTag(uint value) => new(value);
-    public static implicit operator ProtoTag(Varint varint) => new(varint.GetValue());
+    public static implicit operator ProtoTag(Varint varint) => new(varint.GetValue<uint>());
     public static implicit operator Varint(ProtoTag tag) => Varint.FromUInt32(tag.Value);
 
     /// <summary>
@@ -55,7 +55,7 @@ public readonly struct ProtoTag : ISerializable
                 reader.Seek(8, SeekOrigin.Current);
                 break;
             case WireType.LENGTH:
-                int length = Varint.Deserialize(ref reader).GetValue();
+                int length = Varint.Deserialize<int>(ref reader);
                 reader.Seek(length, SeekOrigin.Current);
                 break;
             case WireType.FIXED32:

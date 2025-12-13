@@ -118,7 +118,7 @@ public struct AssetInfo : ISerializable, IDeserializable<AssetInfo>
 
     public static AssetInfo Deserialize(ref BufferReader reader, AssetInfo self)
     {
-        int end = reader.Position + Varint.Deserialize(ref reader).GetValue();
+        int end = reader.Position + Varint.Deserialize<int>(ref reader);
 
         while (reader.Position < end)
         {

@@ -17,7 +17,7 @@ public sealed class GiaFile : GiFile
     [JsonPropertyOrder(1)]
     public IList<Asset> Assets { get; set; } = [];
     private static readonly ProtoTag TagAssets = new(1, WireType.LENGTH);
-    private Integer[] szAssets = [];
+    private int[] szAssets = [];
     private bool hasAssets = false;
 
     /// <summary>
@@ -27,7 +27,7 @@ public sealed class GiaFile : GiFile
     [JsonPropertyOrder(2)]
     public IList<Asset> RelatedAssets { get; set; } = [];
     private static readonly ProtoTag TagRelatedAssets = new(2, WireType.LENGTH);
-    private Integer[] szRelatedAssets = [];
+    private int[] szRelatedAssets = [];
     private bool hasRelatedAssets = false;
 
     /// <summary>
@@ -37,7 +37,7 @@ public sealed class GiaFile : GiFile
     [JsonPropertyOrder(3)]
     public string ExportInfo { get; set; } = string.Empty;
     private static readonly ProtoTag TagExportInfo = new(3, WireType.LENGTH);
-    private Integer szExportInfo = 0;
+    private int szExportInfo = 0;
 
     private int GetBufferSize()
     {
@@ -46,7 +46,7 @@ public sealed class GiaFile : GiFile
         hasAssets = false;
         if (Assets.Count > 0)
         {
-            szAssets = new Integer[Assets.Count];
+            szAssets = new int[Assets.Count];
             for (int i = 0; i < Assets.Count; i++)
             {
                 szAssets[i] = Assets[i].GetBufferSize();
@@ -59,7 +59,7 @@ public sealed class GiaFile : GiFile
         hasRelatedAssets = false;
         if (RelatedAssets.Count > 0)
         {
-            szRelatedAssets = new Integer[RelatedAssets.Count];
+            szRelatedAssets = new int[RelatedAssets.Count];
             for (int i = 0; i < RelatedAssets.Count; i++)
             {
                 szRelatedAssets[i] = RelatedAssets[i].GetBufferSize();
@@ -132,7 +132,7 @@ public sealed class GiaFile : GiFile
             {
                 if (szAssets[i] == 0) continue; // 跳过空对象
                 TagAssets.Serialize(ref writer);
-                Varint.FromUInt32(szAssets[i]).Serialize(ref writer);
+                Varint.FromInt32(szAssets[i]).Serialize(ref writer);
                 Assets[i].Serialize(ref writer);
             }
         }
@@ -143,7 +143,7 @@ public sealed class GiaFile : GiFile
             {
                 if (szRelatedAssets[i] == 0) continue; // 跳过空对象
                 TagRelatedAssets.Serialize(ref writer);
-                Varint.FromUInt32(szRelatedAssets[i]).Serialize(ref writer);
+                Varint.FromInt32(szRelatedAssets[i]).Serialize(ref writer);
                 RelatedAssets[i].Serialize(ref writer);
             }
         }
@@ -151,7 +151,7 @@ public sealed class GiaFile : GiFile
         if (szExportInfo != 0)
         {
             TagExportInfo.Serialize(ref writer);
-            Varint.FromUInt32(szExportInfo).Serialize(ref writer);
+            Varint.FromInt32(szExportInfo).Serialize(ref writer);
             writer.WriteString(ExportInfo, szExportInfo); // 已经计算过长度了，不用再计算一次
         }
 

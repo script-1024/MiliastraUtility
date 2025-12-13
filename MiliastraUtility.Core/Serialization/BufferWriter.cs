@@ -197,8 +197,8 @@ public ref struct BufferWriter(Span<byte> buffer)
     /// <exception cref="EndOfStreamException"></exception>
     public void WriteString(string value)
     {
-        Integer length = Encoding.UTF8.GetByteCount(value);
-        Varint.FromUInt32(length).Serialize(ref this);
+        int length = Encoding.UTF8.GetByteCount(value);
+        Varint.FromInt32(length).Serialize(ref this);
         EnsureAvailable(length);
         Encoding.UTF8.GetBytes(value, buffer[pos..]);
         pos += length;

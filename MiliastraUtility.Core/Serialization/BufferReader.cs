@@ -209,7 +209,7 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     /// <exception cref="EndOfStreamException"></exception>
     public string ReadString()
     {
-        int length = Varint.Deserialize(ref this).GetValue();
+        int length = Varint.Deserialize<int>(ref this);
         if (length == 0) return string.Empty;
         EnsureAvailable(length);
         string value = Encoding.UTF8.GetString(buffer.Slice(pos, length));

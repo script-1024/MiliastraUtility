@@ -10,20 +10,20 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
     [JsonPropertyOrder(1)]
     public AssetInfo Info { get; set; }
     private static readonly ProtoTag TagInfo = new(1, WireType.LENGTH);
-    private Integer szInfo = 0;
+    private int szInfo = 0;
 
     // 2: 关联资产的元信息列表
     [JsonPropertyOrder(2)]
     public IList<AssetInfo> RelatedInfo { get; set; } = [];
     private static readonly ProtoTag TagRelatedInfo = new(2, WireType.LENGTH);
-    private Integer[] szRelated = [];
+    private int[] szRelated = [];
     private bool hasRelated = false;
 
     // 3: 资产名称
     [JsonPropertyOrder(3)]
     public string Name { get; set; } = string.Empty;
     private static readonly ProtoTag TagName = new(3, WireType.LENGTH);
-    private Integer szName = 0;
+    private int szName = 0;
 
     // 5: 资产类型
     [JsonPropertyOrder(5)]
@@ -45,7 +45,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
         hasRelated = false;
         if (RelatedInfo.Count > 0)
         {
-            szRelated = new Integer[RelatedInfo.Count];
+            szRelated = new int[RelatedInfo.Count];
             for (int i = 0; i < RelatedInfo.Count; i++)
             {
                 szRelated[i] = RelatedInfo[i].GetBufferSize();
@@ -73,7 +73,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
         if (szInfo != 0)
         {
             TagInfo.Serialize(ref writer);
-            Varint.FromUInt32(szInfo).Serialize(ref writer);
+            Varint.FromInt32(szInfo).Serialize(ref writer);
             Info.Serialize(ref writer);
         }
 
@@ -83,7 +83,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
             {
                 if (szRelated[i] == 0) continue; // 跳过空对象
                 TagRelatedInfo.Serialize(ref writer);
-                Varint.FromUInt32(szRelated[i]).Serialize(ref writer);
+                Varint.FromInt32(szRelated[i]).Serialize(ref writer);
                 RelatedInfo[i].Serialize(ref writer);
             }
         }
@@ -91,7 +91,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
         if (szName != 0)
         {
             TagName.Serialize(ref writer);
-            Varint.FromUInt32(szName).Serialize(ref writer);
+            Varint.FromInt32(szName).Serialize(ref writer);
             writer.WriteString(Name, szName); // 已经计算过长度了，不用再计算一次
         }
 
@@ -107,7 +107,7 @@ public sealed class Asset : ISerializable, IDeserializable<Asset>
 
     public static Asset Deserialize(ref BufferReader reader, Asset self)
     {
-        int length = Varint.Deserialize(ref reader).GetValue();
+        int length = Varint.Deserialize<int>(ref reader);
         int end = reader.Position + length;
 
         while (reader.Position < end)

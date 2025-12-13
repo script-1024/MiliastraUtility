@@ -14,7 +14,6 @@ public struct Guid(uint value) : ISerializable, IDeserializable<Guid>
     public uint Value { get; set; } = value;
 
     public static implicit operator Guid(uint value) => new(value);
-    public static implicit operator Guid(Integer value) => new(value);
     public static implicit operator Varint(Guid guid) => Varint.FromUInt32(guid.Value);
 
     /// <summary>
@@ -31,7 +30,7 @@ public struct Guid(uint value) : ISerializable, IDeserializable<Guid>
         => Deserialize(ref reader, default);
 
     public static Guid Deserialize(ref BufferReader reader, Guid self)
-        => Varint.Deserialize(ref reader).GetValue();
+        => Varint.Deserialize<uint>(ref reader);
 }
 
 internal sealed class JsonGuidConverter : JsonConverter<Guid>
