@@ -33,7 +33,7 @@ public readonly struct ProtoTag : ISerializable
             1 => WireType.FIXED64,
             2 => WireType.LENGTH,
             5 => WireType.FIXED32,
-            _ => throw new NotSupportedException()
+            _ => throw new ArgumentException("不受支持的线路类型")
         };
     }
 
@@ -61,7 +61,7 @@ public readonly struct ProtoTag : ISerializable
             case WireType.FIXED32:
                 reader.Seek(4, SeekOrigin.Current);
                 break;
-            default: throw new NotSupportedException();
+            default: throw new InvalidOperationException("此标签的线路类型不受支持");
         }
     }
 

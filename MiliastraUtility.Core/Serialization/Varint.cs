@@ -73,20 +73,20 @@ public struct Varint : ISerializable, IDeserializable<Varint>
     public readonly T GetValue<T>() where T : unmanaged
         => (T)GetValue(typeof(T));
 
-    public readonly object GetValue(Type targetType)
+    public readonly object GetValue(Type type)
     {
         ulong result = GetValue();
-        return targetType switch
+        return type switch
         {
-            var t when t == typeof(ulong)  => result,
-            var t when t == typeof(long)   => (long)result,
-            var t when t == typeof(uint)   => (uint)result,
-            var t when t == typeof(int)    => (int)result,
-            var t when t == typeof(ushort) => (ushort)result,
-            var t when t == typeof(short)  => (short)result,
-            var t when t == typeof(byte)   => (byte)result,
-            var t when t == typeof(sbyte)  => (sbyte)result,
-            var t when t == typeof(bool)   => result != 0,
+            var _ when type == typeof(bool)   => result != 0,
+            var _ when type == typeof(sbyte)  => (sbyte)result,
+            var _ when type == typeof(byte)   => (byte)result,
+            var _ when type == typeof(short)  => (short)result,
+            var _ when type == typeof(ushort) => (ushort)result,
+            var _ when type == typeof(int)    => (int)result,
+            var _ when type == typeof(uint)   => (uint)result,
+            var _ when type == typeof(long)   => (long)result,
+            var _ when type == typeof(ulong)  => result,
             _ => throw new NotSupportedException()
         };
     }
