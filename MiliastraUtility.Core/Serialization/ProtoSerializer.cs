@@ -1,20 +1,26 @@
 using System.Collections;
 using System.Collections.Frozen;
 using System.Reflection;
+using System.Text;
 
 namespace MiliastraUtility.Core.Serialization;
 
 public static class ProtoSerializer
 {
     /// <summary>
+    /// 取得属性信息
+    /// </summary>
+    private static IEnumerable<PropertyInfo> GetProperties(Type type)
+        => type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+               .Where(p => p.GetCustomAttribute<ProtoFieldAttribute>() != null);
+
+    /// <summary>
     /// 取得字段编号和属性信息的映射字典
     /// </summary>
     private static FrozenDictionary<int, PropertyInfo> GetFieldMap(Type type)
     {
         var result = new Dictionary<int, PropertyInfo>();
-        var properties = from p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                         where p.GetCustomAttribute<ProtoFieldAttribute>() != null
-                         select p;
+        var properties = GetProperties(type);
 
         foreach (var p in properties)
         {
@@ -37,8 +43,7 @@ public static class ProtoSerializer
     /// </summary>
     private static void AddToList(PropertyInfo prop, object obj, object? element)
     {
-        var list = prop.GetValue(obj) as IList;
-        if (list is null)
+        if (prop.GetValue(obj) is not IList list)
         {
             Type elementType = GetElementType(prop.PropertyType)!;
             Type listType = typeof(List<>).MakeGenericType(elementType);
@@ -126,6 +131,140 @@ public static class ProtoSerializer
     }
 
     /// <summary>
+    /// 将枚举值转为 ulong，以便稍后可以用 Varint 将其序列化
+    /// </summary>
+    private static ulong EnumToUInt64(Type enumType, object value)
+    {
+        Type type = Enum.GetUnderlyingType(enumType);
+        return type switch
+        {
+            var _ when type == typeof(sbyte)  => (ulong)(sbyte)value,
+            var _ when type == typeof(byte)   => (byte)value,
+            var _ when type == typeof(short)  => (ulong)(short)value,
+            var _ when type == typeof(ushort) => (ushort)value,
+            var _ when type == typeof(int)    => (ulong)(int)value,
+            var _ when type == typeof(uint)   => (uint)value,
+            var _ when type == typeof(long)   => (ulong)(long)value,
+            var _ when type == typeof(ulong)  => (ulong)value,
+            _ => throw new NotSupportedException()
+        };
+    }
+
+    /// <summary>
+    /// 取得最适合目标类型的 <see cref="ValueKind"/>
+    /// </summary>
+    private static ValueKind GetValueKind(Type type)
+        => type switch
+        {
+            var t when t.IsEnum            => ValueKind.Varint,
+            var t when t == typeof(bool)   => ValueKind.Varint,
+            var t when t == typeof(sbyte)  => ValueKind.Varint,
+            var t when t == typeof(byte)   => ValueKind.Varint,
+            var t when t == typeof(short)  => ValueKind.Varint,
+            var t when t == typeof(ushort) => ValueKind.Varint,
+            var t when t == typeof(int)    => ValueKind.Varint,
+            var t when t == typeof(uint)   => ValueKind.Varint,
+            var t when t == typeof(long)   => ValueKind.Varint,
+            var t when t == typeof(ulong)  => ValueKind.Varint,
+            var t when t == typeof(float)  => ValueKind.Fixed32,
+            var t when t == typeof(double) => ValueKind.Fixed64,
+            var t when t == typeof(string) => ValueKind.String,
+            var t when t.IsAssignableTo(typeof(IList)) => ValueKind.List,
+            _ => ValueKind.Object
+        };
+
+    /// <summary>
+    /// 计算目标值所需的缓冲区大小
+    /// </summary>
+    private static int GetBufferSizeOfValue(ValueKind kind, Type type, object value)
+    {
+        switch (kind)
+        {
+            case ValueKind.Varint:
+                switch (value)
+                {
+                    case bool bl:
+                        return (bl == false) ? 0 : 1;
+
+                    case sbyte sb:
+                        return (sb == 0) ? 0 : Varint.GetBufferSize((uint)sb);
+
+                    case byte b:
+                        return (b == 0) ? 0 : Varint.GetBufferSize(b);
+
+                    case short s:
+                        return (s == 0) ? 0 : Varint.GetBufferSize((uint)s);
+
+                    case ushort us:
+                        return (us == 0) ? 0 : Varint.GetBufferSize(us);
+
+                    case int i:
+                        return (i == 0) ? 0 : Varint.GetBufferSize((uint)i);
+
+                    case uint ui:
+                        return (ui == 0) ? 0 : Varint.GetBufferSize(ui);
+
+                    case long l:
+                        return (l == 0) ? 0 : Varint.GetBufferSize((ulong)l);
+
+                    case ulong ul:
+                        return (ul == 0) ? 0 : Varint.GetBufferSize(ul);
+
+                    default:
+                    {
+                        if (!type.IsEnum)
+                            throw new InvalidOperationException("无效的类型声明：ValueKind.Varint 只能用于枚举或整数类型的属性上");
+                        
+                        ulong u = EnumToUInt64(type, value);
+                        return (u == 0) ? 0 : Varint.GetBufferSize(u);
+                    }
+                }
+            case ValueKind.Fixed32:
+                return value switch
+                {
+                    int i => (i == 0) ? 0 : 4,
+                    uint u => (u == 0) ? 0 : 4,
+                    float f => (f == 0) ? 0 : 4,
+                    _ => 0,
+                };
+            case ValueKind.Fixed64:
+                return value switch
+                {
+                    long l => (l == 0) ? 0 : 8,
+                    ulong u => (u == 0) ? 0 : 8,
+                    double d => (d == 0) ? 0 : 8,
+                    _ => 0,
+                };
+            case ValueKind.String:
+            {
+                if (value is not string str)
+                    throw new InvalidOperationException("无效的类型声明：ValueKind.String 只能用于字符串类型的属性上");
+                int size = Encoding.UTF8.GetByteCount(str);
+                return (size == 0) ? 0 : Varint.GetBufferSize((uint)size) + size;
+            }
+            case ValueKind.Object:
+            {
+                int size = GetBufferSize(value);
+                return (size == 0) ? 0 : Varint.GetBufferSize((uint)size) + size;
+            }
+            case ValueKind.List:
+            {
+                if (value is not IList list || list.Count == 0) return 0;
+                var elemType = GetElementType(type)!;
+                var elemKind = GetValueKind(elemType);
+                int size = 0;
+                foreach (object item in list)
+                {
+                    int itemSize = GetBufferSizeOfValue(elemKind, elemType, item);
+                    if (itemSize > 0) size += itemSize;
+                }
+                return size;
+            }
+        }
+        return 0;
+    }
+
+    /// <summary>
     /// 从读取器反序列化成指定类型的实例
     /// </summary>
     /// <typeparam name="T">目标类型</typeparam>
@@ -190,9 +329,77 @@ public static class ProtoSerializer
         return obj;
     }
 
-    public static int GetBufferSize<T>()
+    /// <summary>
+    /// 计算序列化所需的缓冲区大小
+    /// </summary>
+    /// <param name="instance">目标对象</param>
+    /// <exception cref="InvalidOperationException"/>
+    /// <exception cref="NotSupportedException"/>
+    public static int GetBufferSize(object instance)
     {
-        throw new NotImplementedException();
+        int size = 0;
+        var properties = GetProperties(instance.GetType());
+
+        bool hasProperty = false;
+        foreach (var p in properties)
+        {
+            hasProperty = true;
+            object? value = p.GetValue(instance);
+            var attr = p.GetCustomAttribute<ProtoFieldAttribute>()!;
+            int tagSize = Varint.GetBufferSize((uint)(attr.Id << 3));
+
+            // 一个字节的长度信息，值为 0x00，此 null 值是被刻意保留的，不能省略
+            if (attr.Kind == ValueKind.Null)
+            {
+                size += tagSize + 1;
+                continue;
+            }
+
+            if (value is null) continue;
+            Type type = value.GetType();
+
+            if (attr.Kind == ValueKind.List)
+            {
+                int listSize = GetBufferSizeOfValue(ValueKind.List, type, value);
+                if (listSize > 0) size += ((value as IList)!.Count * tagSize) + listSize;
+                continue;
+            }
+            
+            if (attr.Kind == ValueKind.Wrapped)
+            {
+                var wrapperInfo = p.GetCustomAttribute<WrappedFieldAttribute>() ??
+                    throw new InvalidOperationException("缺少修饰特性 WrappedFieldAttribute");
+
+                int itemSize = GetBufferSizeOfValue(wrapperInfo.Kind, type, value);
+                if (itemSize == 0) continue;
+
+                int itemTagSize = Varint.GetBufferSize((uint)(wrapperInfo.Id << 3));
+                int wrapperSize = itemTagSize + itemSize;
+
+                for (int i = wrapperInfo.Levels.Length - 1; i >= 0; i--)
+                {
+                    int wrapperTagSize = Varint.GetBufferSize((uint)(wrapperInfo.Levels[i] << 3));
+                    wrapperSize = wrapperTagSize + Varint.GetBufferSize((uint)wrapperSize) + wrapperSize;
+                }
+
+                size += wrapperSize;
+                continue;
+            }
+
+            int valueSize = GetBufferSizeOfValue(attr.Kind, type, value);
+            if (valueSize > 0) size += tagSize + valueSize;
+        }
+
+        if (!hasProperty) // 传入了基础类型
+        {
+            var type = instance.GetType();
+            var kind = GetValueKind(type);
+            return kind != ValueKind.Object
+                ? GetBufferSizeOfValue(kind, type, instance)
+                : throw new NotSupportedException("不受支持的类型");
+        }
+
+        return size;
     }
 
     public static void Serialize<T>(ref BufferWriter writer, T value) where T : notnull
