@@ -73,6 +73,21 @@ public ref struct BufferReader(ReadOnlySpan<byte> buffer)
     }
 
     /// <summary>
+    /// 返回此读取器的切片副本，接受一个长度信息。
+    /// </summary>
+    /// <param name="length">长度</param>
+    public readonly BufferReader Slice(int length)
+        => new(buffer.Slice(pos, length));
+
+    /// <summary>
+    /// 返回此读取器的切片副本，接受起始位置和长度信息。
+    /// </summary>
+    /// <param name="start">起始位置</param>
+    /// <param name="length">长度</param>
+    public readonly BufferReader Slice(int start, int length)
+        => new(buffer.Slice(start, length));
+
+    /// <summary>
     /// 从缓冲区读取一个字节。
     /// </summary>
     /// <exception cref="EndOfStreamException"></exception>
